@@ -1,0 +1,45 @@
+
+
+toml configuration
+------------------
+
+the configuration in use is called nightskycam_config.toml (implied version 0)
+it can be a link to another file nightskycam_hostname_version.toml
+
+the config thread download newer version of nightskycam_hostname_version.toml
+and possibly relink nightskycam_config.toml
+
+the higher level executable possibly delete all *.toml files and redownload
+a config file that is names locally nightskycam_config.toml
+
+config_getter simply return config from the current nightskycam_config.toml
+
+skythread_manager stop / restart skythreads if list of skythreads changed
+
+
+Deploy config
+-------------
+
+toml configuration file in /etc/nightskycam/nightskycam_deploy.config
+
+apt install the dependencies, incl. python and pip
+hostname -> None or str
+configuration url -> None or str
+wifi connections -> None or str
+python_package -> None or package name
+failure email -> None or email
+deploy_executable
+deploy_timeout
+executable to start -> executable name
+
+First deploy
+------------
+
+- ask user for master wifi passwd
+- download wifi config toml file and try to decompress it
+- change the hostname
+- copy the config file locally
+- try to activate venv
+- pip upgrade 
+- check executable exists and is executable
+- add file to init.d

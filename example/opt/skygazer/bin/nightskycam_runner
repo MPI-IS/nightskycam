@@ -1,0 +1,308 @@
+#!/bin/bash
+
+#############################
+#                           #
+# this file                 #
+# should find itself in     #
+# /usr/local/bin or similar #
+#                           #
+#############################
+
+PROJECT="nightskycam"
+
+
+############################## 
+# checking if internet is on #
+##############################
+
+# sets up the variable ${INTERNET_ON}
+# to true or false
+
+is_internet_on () {
+    wget -q --spider http://google.com
+    if [ $? -eq 0 ]; then
+	INTERNET_ON=true
+    else
+	INTERNET_OFF=false
+    fi
+}
+
+is_internet_on
+
+
+#####################
+# logging functions #
+#####################
+
+ntfy() {
+    title=$1
+    priority=$2
+    tags=$3
+    message=$4
+    topic=$5
+    ntfy_email=$6
+if [ -z ${ntfy_email+x} ]; then
+    curl -s \
+	-H "Title: ${title}" \
+	-H "Priority: ${priority}" \
+	-H "Tags: ${tags}" \
+	-H "Email: ${ntfy_email}" \
+	-d "${message}" \
+	ntfy.sh/${topic} > /dev/null
+else
+    curl -s \
+	-H "Title: ${title}" \
+	-H "Priority: ${priority}" \
+	-H "Tags: ${tags}" \
+	-d "${message}" \
+	ntfy.sh/${topic} > /dev/null
+fi
+}
+
+logmsg () {
+    echo -e "\n${PROJECT} - ${1}"
+    logger -t ${PROJECT} -p user.notice "$1"
+    if [ -z ${hostname+x} ]; then hostname=$HOSTNAME; fi
+    ntfy "nightskycam runner" "default" "wrench,green_circle" "$1" "nightskycam_${hostname}"
+}
+
+logerror () {
+    >&2 echo -e "\n${PROJECT} - ${1}" 
+    logger -t ${PROJECT} -p user.notice --stderr "$1"
+    if [ -z ${hostname+x} ]; then hostname=$HOSTNAME; fi
+    ntfy "nightskycam runner error" "urgent" "wrench,red_circle" "$1" "nightskycam_${hostname}" "$email"
+}
+
+# the main folder
+SKYGAZER_DIR="/opt/nightskycam"
+
+######################################################
+# exit with error if the main folder does not exists #
+######################################################
+
+if [ ! -d "${SKYGAZER_DIR}" ] ; then
+   logerror "failed to find ${project} directory ${SKYGAZER_DIR}"
+   exit 1
+fi
+
+########################################################
+# exit with error if the master config does not exists #
+########################################################
+
+# the master config file
+# define and declare these variables:
+# ${remote} : external url for updates
+# ${python_package} : python package to pip upgrade at each startup
+# ${executable} : main executable, possibly installed via pip install of this package
+# ${deploy_executable} : deploy executable, possibly installed via pip install of this package
+# ${hostname} : hostname of the computer
+# ${passwd} : zip password
+# ${reboot_time}: the time at which the system should reboot
+# ${email}: emails are sent at this address on error (via ntfy.sh)
+
+SKYGAZER_META="${SKYGAZER_DIR}/nightskycam_meta.sh"
+
+if [ ! -f "${SKYGAZER_META}" ]; then
+    logerror "failed to find the master configuration file ${SKYGAZER_META}"
+    exit 1
+fi
+
+source ${SKYGAZER_META}
+
+
+##################################################
+# for downloading a remote file and unzipping it #
+##################################################
+
+deploy_remote () {
+    url=$1
+    filename=$2
+    destination_dir=$3
+    passwd=$4
+    download_url=${url}/${filename}
+    if curl --output /dev/null --silent --head --fail "${download_url}"; then
+	cd ${destination_dir}
+	rm -rf ${destination_dir}/${filename}
+	logmsg "downloading ${download_url} to ${destination_dir}"
+	wget_error=$(wget -q ${download_url} . 2>&1)
+	if [ ! -z "$wget_error" ]; then
+	    logerror "failed to download ${download_url} to ${destination_dir} (exit code: ${exit_status}): ${wget_error}"
+	else
+	    logmsg "unzipping ${destination_dir}/${filename}"
+	    unzip_error=$(unzip -q -o -P  ${passwd} ${filename} 2>&1)
+	    exit_status=$?
+	    if [ ! $exit_status -eq 0 ]; then
+		logerror "failed to unzip ${destination_dir}/${filename} (exit code: ${exit_status}): ${unzip_error}"
+	    fi
+	fi
+    else
+ 	logmsg "no file ${download_url} found, skipping /opt/nightskycam update"
+    fi
+}
+
+
+
+#############################################
+# Downloading content of /opt/nightskycam anew #
+#############################################
+
+deploy_remote ${remote}/${hostname} "opt.zip" ${SKYGAZER_DIR} ${passwd} 
+
+
+#######################################################
+# copying wpa_supplicant.conf to /etc/wpa_supplicant/ #
+#######################################################
+
+# This allows for setting new wifi ssid/password.
+# The file /opt/nightskycam/wpa_supplicant.conf may come
+# from the file unzipped during the previous step
+
+wpa_supplicant=${SKYGAZER_DIR}/wpa_supplicant.conf
+wpa_destination="/etc/wpa_supplicant"
+current_wpa_supplicant=${wpa_destination}/wpa_supplicant.conf
+if [ -f "${wpa_supplicant}" ]; then
+
+    logmsg "${wpa_supplicant} file detected"
+    
+    if [ ! -f "${current_wpa_supplicant}" ]; then
+	touch ${current_wpa_supplicant}
+    fi
+    
+    # going forward only if there is some update in the file
+    wpa_diff=$(diff ${current_wpa_supplicant} ${wpa_supplicant})
+    if [ "$wpa_diff" != "" ]; then
+	logmsg "update of the wifi configuration: copying ${wpa_supplicant} to ${wpa_destination}"
+	cp ${wpa_supplicant} ${wpa_destination}
+	exit_status=$?
+	if [ ! $exit_status -eq 0 ]; then
+	    logerror "failed to copy ${wpa_supplicant} to ${wpa_destination}: $exit_status"
+	else
+	    # restarting the wifi network
+	    logmsg "restarting wifi network"
+	    ifdown_error=$(ifdown --force wlan0 2>&1)
+	    if [ ! -z "$ifdown_error" ]; then
+		logerror "failed restart the wifi network: ${ifdown_error}"
+	    else
+		ifup_error=$(ifup wlan0 2>&1)
+		logerror "failed restart the wifi network: ${ifup_error}"
+	    fi
+	fi
+    else
+	logmsg "no update in the content of ${wpa_supplicant}"
+    fi
+    
+else
+    logmsg "no file ${wpa_supplicant} detected, skipping update of the wifi configuration"
+fi
+
+
+##########################
+# upgrading the software #
+##########################
+
+if [ "$INTERNET_ON" = true ] ; then
+    if [ ! -z "${python_package}" ] ; then
+	logmsg "pip installing / upgrading ${python_package}"
+	pip_error=$(pip install ${python_package} --upgrade 2>&1)
+	exit_status=$?
+	if [ ! $exit_status -eq 0 ]; then
+	    logerror "failed to (pip) install / upgrade python package ${python_package} (exit code: ${exit_status}): ${pip_error}"
+	fi
+    fi
+else
+    logerror "no internet detection, skipping pip install / upgrade of ${python_package}"
+fi
+
+
+#################################
+# fixing the configuration file #
+#################################
+
+
+files=( $(cd ${SKYGAZER_DIR} && ls -A1 nightskycam_config_*.toml 2> /dev/null) )
+
+higher_version="-1"
+for filename in "${files[@]}"
+do
+    version="$(echo "${filename}" | grep -Eo "[[:digit:]]+")"
+    if [ "$version" -gt "$higher_version" ]; then
+	higher_version=$version
+    fi
+done
+
+if [ "$higher_version" -gt 0 ]; then
+    config_file=${SKYGAZER_DIR}/nightskycam_config.toml
+    better_file=${SKYGAZER_DIR}/nightskycam_config_${higher_version}.toml
+    logmsg "setting ${better_file} as main configuration file"
+    rm -rf ${config_file} && ln -s ${better_file} ${config_file}
+fi
+    
+
+######################################
+# there must be a configuration file #
+######################################
+
+if [ ! -f "${config_file}" ]; then
+    logerror "failed to find nightskycam configuration file ${config_file}"
+    exit 1
+fi
+
+
+################################
+# running deploy tests (twice) #
+################################
+
+run_deploy_tests() {
+    deploy_error=$(timeout ${deploy_timeout} ${deploy_executable} 2>&1)
+    # did deploy succeed ?
+    exit_status=$?
+    # 124 is the timeout exit status
+    if [[ $exit_status -eq 124 ]]; then
+	logerror "failed to run the deploy test (timeout of ${deploy_timeout})"
+	# exit with error
+	exit 1
+    fi
+    # failing for another reason
+    if [[ $exit_status -ne 0 ]]; then
+	logerror "failed to run the deploy test: ${deploy_error}"
+	# exit with error
+	exit 1
+    fi
+}
+
+#if [ "$INTERNET_ON" = true ] ; then
+#    logmsg "running deploy tests 1/2"
+#    run_deploy_tests
+#    logmsg "running deploy tests 2/2"
+#    run_deploy_tests
+#fi
+
+
+####################
+# running nightskycam #
+####################
+
+logmsg "starting to run nightskycam ${reboot_time}"
+${executable} & 
+PID=$!
+
+if [ -n ${reboot_time+set} ]; then
+    difference=$(($(date -d "${reboot_time}" +%s) - $(date +%s)))
+    if [ $difference -lt 0 ]; then
+	logmsg "letting nightskycam run for $((86400 + difference)) seconds"
+	sleep $((86400 + difference))
+    else
+	logmsg "letting nightskycam run for ${difference} seconds"
+	sleep $difference
+    fi
+    logmsg "stopping nightskycam !"
+    kill -SIGTERM ${PID}
+    sleep 20
+else
+    logerror "fatal: the variable 'reboot_time' is not set in nightskycam_meta.sh"
+    wait
+fi
+    
+logmsg "exiting"
+
+reboot now
