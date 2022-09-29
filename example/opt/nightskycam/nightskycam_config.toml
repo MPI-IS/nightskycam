@@ -1,0 +1,115 @@
+[main]
+
+	# how often (in seconds) the main process
+	# will try to revive threads that
+	# may have died
+	period = 5.0
+
+	# where local logs files will be written
+        local_log_file = "/opt/nightskycam/logs/logs.txt"
+
+       [main.ntfy]
+
+		# thread status and errors will be published
+		# on ntfy.sh
+
+                # things will be published under this topic                                                                             
+                url = "https://ntfy.sh"
+
+                # visit url/topic to see the notifications                                                                              
+                topic = "nightskycam_{{ hostname }}"
+
+
+# thread is charge of taking pictures
+["nightskycam.skythreads.AsiZwoThread"]
+
+	# do not change
+	tmp_dir = "/opt/nightskycam/data/tmp"
+	latest_dir = "/opt/nightskycam/data/latest"
+	final_dir = "/opt/nightskycam/data/ftp"
+
+	# how often (on seconds) a picture will be taken
+	# should be an int !
+	picture_every = 60
+
+	# outside this time interval (hour:minutes)
+	# pictures will not be taken.
+	# If either "start_record" or "end_record" is
+	# "None", pictures will be taken the whole day
+	start_record = "None"
+	end_record = "07:00"
+
+	# configuration of the camera
+	["nightskycam.skythreads.AsiZwoThread".controllables]
+		AutoExpMaxExpMS = 30000
+		AutoExpMaxGain = 285
+		AutoExpTargetBrightness = 100
+		BandWidth = "auto"
+		CoolerOn = 0
+		Exposure = "auto"
+		Flip = 0
+		Gain = 'auto'
+		HighSpeedMode = 0
+		MonoBin = 0
+		Offset = 8
+		TargetTemp = 0
+		WB_B = 95
+		WB_R = 52
+	
+	["nightskycam.skythreads.AsiZwoThread".roi]
+		start_x = 0
+		start_y = 0
+		width = 4144
+		height = 2822
+		bins = 1
+		type = "raw16"
+
+
+
+# thread in charge of uploading pictures
+["nightskycam.skythreads.FtpThread"]
+
+	# do not change
+	host = "ftp.tuebingen.mpg.de"
+	port = 21
+	username = "is-allsky"
+	passwd = "{{ ftp_passwd }}"
+	local_dir = "/opt/nightskycam/data/ftp"
+
+	# how often the thread will upload the
+	# content of "local_dir"
+	upload_every = 5.0
+
+
+
+# thread in charge of updating the
+# configuration (based on files found online)
+["nightskycam.skythreads.ConfigThread"]
+
+	# location the software will look for newer config files
+	url = "https://webdav.tuebingen.mpg.de/nightskycam/{{ hostname }}"
+
+	# how often it will look for newer config files
+	update_every = 5.0
+
+
+
+# https server serving /opt/skythread
+# (for debug: can be reached only from local network, and may
+# pose security issue: to remove when device deployed)
+#["nightskycam.skythreads.HttpThread"]
+
+#port = 8001
+
+
+
+# for generating thread status files
+# -> not so useful because of nfty notifications
+#["nightskycam.skythreads.StatusThread"]
+
+# how often status files are generated
+#update_every = 10.0
+
+# do not change
+#tmp_dir = "/opt/nightskycam/data/tmp"
+#final_dir = "/opt/nightskycam/data/ftp"
