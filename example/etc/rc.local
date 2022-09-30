@@ -19,6 +19,6 @@ fi
 
 # starting nightskycam
 printf("starting nightskycam")
-/opt/nightskycam/bin/nightskycam_starter
+/opt/nightskycam/bin/nightskycam_starter &
 
 exit 0
