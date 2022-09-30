@@ -106,7 +106,7 @@ def _upload_files(
     config: FtpConfig,
     local_dir: Path,
     remote_dir: Path,
-) -> None:
+) -> typing.Tuple[int, int]:
     if not local_dir.is_dir():
         raise FileNotFoundError(
             f"failing to upload the content of " f"{local_dir}: no such directory"
@@ -114,12 +114,17 @@ def _upload_files(
     if not _is_folder_empty(local_dir):
         _logger.info(f"uploading content of {local_dir}")
         with get_ftp(config, remote_dir) as ftp:
-            ftp.upload_dir(local_dir, delete_local=True)
+            return ftp.upload_dir(local_dir, delete_local=True)
+    return 0, 0
 
 
 class FtpThread(SkyThread):
-    def __init__(self, config_getter: ConfigurationGetter):
-        super().__init__(config_getter, "ftp", tags=["satellite"])
+    def __init__(
+        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
+    ):
+        super().__init__(config_getter, "ftp", tags=["satellite"], ntfy=ntfy)
+        self._nb_files = 0
+        self._uploaded_size = 0
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
@@ -199,11 +204,17 @@ class FtpThread(SkyThread):
 
         # uploading all files that are in the
         # local folder
-        _upload_files(
+        nb_files, uploaded_size = _upload_files(
             config.get_config(),
             config.local_dir,
             get_remote_dir(),
         )
+
+        self._nb_files += nb_files
+        self._uploaded_size += uploaded_size
+
+        self._status.set_misc("uploaded files", str(self._nb_files))
+        self._status.set_misc("uploaded size", str(self._uploaded_size))
 
         # sleeping a bit
         _logger.debug(f"sleeping {config.upload_every} seconds")

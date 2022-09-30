@@ -18,7 +18,9 @@ def _get_configuration_getter():
         "main": main_config,
         "nightskycam.skythreads.DummyThread": dummy_config,
     }
-    config_getter = nightskycam.configuration_getter.DictConfigurationGetter(thread_config)
+    config_getter = nightskycam.configuration_getter.DictConfigurationGetter(
+        thread_config
+    )
 
     return config_getter
 

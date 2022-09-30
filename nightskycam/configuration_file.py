@@ -18,7 +18,9 @@ _logger = logging.getLogger("configuration_file")
 
 def configuration_file_folder() -> Path:
     if not _main_folder.is_dir():
-        raise RuntimeError(f"nightskycam main folder ({_main_folder}) could not be found")
+        raise RuntimeError(
+            f"nightskycam main folder ({_main_folder}) could not be found"
+        )
     return _main_folder
 
 
@@ -258,3 +260,13 @@ def download_file(
         )
     if target_folder is not None:
         (Path(os.getcwd()) / filename).rename(target_folder / filename)
+
+
+def current_config_file() -> str:
+    folder = configuration_file_folder()
+    config_file = folder / "nightskycam_config.toml"
+    if not config_file.is_file():
+        raise FileNotFoundError(f"failed to find the configuration file {config_file}")
+    if not config_file.is_symlink():
+        return config_file.name
+    return config_file.readlink().name

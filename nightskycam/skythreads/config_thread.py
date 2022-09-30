@@ -129,8 +129,10 @@ class ConfigThreadConfiguration:
 
 
 class ConfigThread(SkyThread):
-    def __init__(self, config_getter: ConfigurationGetter):
-        super().__init__(config_getter, "configuration", tags=["inbox_tray"])
+    def __init__(
+        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
+    ):
+        super().__init__(config_getter, "configuration", tags=["inbox_tray"], ntfy=ntfy)
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
@@ -217,6 +219,8 @@ class ConfigThread(SkyThread):
         config = typing.cast(
             ConfigThreadConfiguration, ConfigThreadConfiguration.from_dict(config_)
         )
+
+        self._status.set_misc("current", cf.current_config_file())
 
         # downloading newer configuration file, if any
         downloaded_file: typing.Optional[Path] = download_remote_if_better(

@@ -13,9 +13,31 @@ _logger = logging.getLogger("ntfy")
 
 class Status(Enum):
     running = (0,)
-    off = (1,)
-    failure = (2,)
-    waiting = (3,)
+    starting = (1,)
+    off = (2,)
+    failure = (3,)
+
+
+StatusMarker = {
+    Status.running: "*",
+    Status.off: "o",
+    Status.failure: "!",
+    Status.starting: "-",
+}
+
+StatusPriority = {
+    Status.running: 3,
+    Status.starting: 3,
+    Status.off: 3,
+    Status.failure: 4,
+}
+
+StatusTags = {
+    Status.running: "green_square",
+    Status.failure: "red_square",
+    Status.off: "black_large_square",
+    Status.starting: "blue_square",
+}
 
 
 class NtfyStatus:
@@ -24,14 +46,14 @@ class NtfyStatus:
         Status.running: "green_square",
         Status.failure: "red_square",
         Status.off: "black_large_square",
-        Status.waiting: "blue_square",
+        Status.starting: "blue_square",
     }
 
     status_priorities = {
         Status.running: 3,
         Status.failure: 4,
         Status.off: 3,
-        Status.waiting: 3,
+        Status.starting: 3,
     }
 
     def __init__(self):
@@ -79,8 +101,8 @@ class NtfyStatus:
                 did_not_run_for = datetime.datetime.now() - last_time_running
                 messages.append(f"- did not run for: {did_not_run_for}")
 
-        elif current_status == Status.waiting:
-            instance.title = f"{name}: waiting status"
+        elif current_status == Status.starting:
+            instance.title = f"{name}: starting status"
             instance.priority = 3
 
         if error:
@@ -88,17 +110,26 @@ class NtfyStatus:
 
         if misc:
             for key, value in misc.items():
-                messages.append("- {key}: {value}")
+                messages.append(f"- {key}: {value}")
 
         instance.message = "\n".join(messages)
+
+        if not instance.message:
+            instance.message = "-"
 
         return instance
 
 
 class SkyThreadStatus:
-    def __init__(self, name: str, config_getter: ConfigurationGetter, tags: typing.Optional[typing.List[str]] = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        config_getter: ConfigurationGetter,
+        tags: typing.Optional[typing.List[str]] = None,
+        ntfy: typing.Optional[bool] = True,
+    ) -> None:
         self._name = name
-        self._status = Status.waiting
+        self._status = Status.starting
         self._last_time_running: typing.Optional[datetime.datetime] = None
         self._started_running: typing.Optional[datetime.datetime] = None
         self._error: typing.Optional[str] = None
@@ -109,9 +140,14 @@ class SkyThreadStatus:
             self._tags = tags
         self._config_getter = config_getter
         self._lock = Lock()
-        self._ntfy_publish(None)
+        self._ntfy = ntfy
+        if self._ntfy:
+            self._ntfy_publish(None)
 
     def _ntfy_publish(self, previous_status: typing.Optional[Status]) -> None:
+
+        if not self._ntfy:
+            return
 
         if previous_status is not None:
             _logger.info(

@@ -38,7 +38,6 @@ def publish(
         "tags": tags,
         "priority": priority,
     }
-
     data = json.dumps(d)
     response = requests.post(url, data=data)
     if response.status_code != 200:

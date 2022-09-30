@@ -39,7 +39,9 @@ def test_list_config_files():
         ]
 
         for filename in valid_filenames:
-            assert nightskycam.configuration_file.is_valid_configuration_filename(filename)
+            assert nightskycam.configuration_file.is_valid_configuration_filename(
+                filename
+            )
 
         for filename in invalid_filenames:
             assert not nightskycam.configuration_file.is_valid_configuration_filename(
@@ -195,5 +197,3 @@ def test_upgrade_config_file(http_server):
         # to the correct best file
         assert "remote" in current_config.read_text()
         assert best_filename in current_config.read_text()
-
-

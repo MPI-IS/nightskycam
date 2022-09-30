@@ -142,13 +142,60 @@ deploy_remote () {
 
 
 
-#############################################
+################################################
 # Downloading content of /opt/nightskycam anew #
-#############################################
+################################################
 
 deploy_remote ${remote}/${hostname} "opt.zip" ${SKYGAZER_DIR} ${passwd} 
 
 
+#################################
+# Running command.sh, if exists #
+#################################
+
+command_file=${SKYGAZER_DIR}/command.sh
+command_stdout=${SKYGAZER_DIR}/command_stdout.txt
+command_stderr=${SKYGAZER_DIR}/command_stderr.txt
+
+if [ -f "${command_stdout}" ]; then
+   rm ${command_stdout}
+fi
+
+if [ -f "${command_stderr}" ]; then
+      rm ${command_stderr}
+fi
+
+if [ -f "${command_file}" ]; then
+
+    logmsg "running command file"
+    
+    /bin/bash ${command_file} > ${command_stdout} 2> ${command_stderr}
+    exit_status=$?
+
+    c_stdout=$(cat ${command_stdout})
+    c_stderr=$(cat ${command_stderr})
+    
+    if [ $exit_status -eq 0 ]; then
+	logmsg "command file ran with success"
+    else
+	logerr "command file ran with error: ${exit_status}"
+    fi
+
+    if [ ! -z "${c_stdout}" ]; then
+	logmsg "command file standard output: ${c_stdout}"
+    fi
+
+    if [ ! -z "${c_stderr}" ]; then
+	logerror "command file standard error: ${c_stderr}"
+    fi
+    
+
+else
+
+    logmsg "no command file found, skipping"
+    
+fi
+    
 #######################################################
 # copying wpa_supplicant.conf to /etc/wpa_supplicant/ #
 #######################################################
@@ -201,17 +248,34 @@ fi
 ##########################
 
 if [ "$INTERNET_ON" = true ] ; then
-    if [ ! -z "${python_package}" ] ; then
+    if [ ! -z "${python_package_git}" ] ; then
 	logmsg "pip installing / upgrading ${python_package}"
-	pip_error=$(pip install ${python_package} --upgrade 2>&1)
+	install_folder=/tmp/$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 10 | head -n 1)
+	mkdir -p ${install_folder}
+	cd ${install_folder}
+	git_error=$(git clone ${python_package_git} 2>&1)
 	exit_status=$?
-	if [ ! $exit_status -eq 0 ]; then
-	    logerror "failed to (pip) install / upgrade python package ${python_package} (exit code: ${exit_status}): ${pip_error}"
+	if [[ $exit_status -ne 0 ]]; then
+	    logerror "failed to (git) clone ${python_package_git}: ${git_error}"
+	else
+	    cd ${python_package}
+	    pip_error=$(pip install . 2>&1)
+	    exit_status=$?
+	    if [[ $exit_status -ne 0 ]]; then
+		logerror "failed to pip install ${python_package}: ${pip_error}"
+	    else
+		logmsg "pip installed/upgraded ${python_package_git}"
+	    fi
 	fi
     fi
 else
     logerror "no internet detection, skipping pip install / upgrade of ${python_package}"
 fi
+
+package_version=$(pip list | grep ${python_package})
+package_version_array=($package_version)
+version=${package_version_array[1]}
+logmsg "using python package ${python_package} version ${version}"
 
 
 #################################
@@ -278,12 +342,12 @@ run_deploy_tests() {
 #fi
 
 
-####################
+#######################
 # running nightskycam #
-####################
+#######################
 
-logmsg "starting to run nightskycam ${reboot_time}"
-${executable} & 
+logmsg "starting to run nightskycam, will stop and reboot at: ${reboot_time}"
+#${executable} & 
 PID=$!
 
 if [ -n ${reboot_time+set} ]; then

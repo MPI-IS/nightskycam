@@ -29,8 +29,10 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
 
 
 class AsiZwoThread(PictureThread):
-    def __init__(self, config_getter: ConfigurationGetter):
-        super().__init__("asi_zwo", config_getter)
+    def __init__(
+        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
+    ):
+        super().__init__("asi_zwo", config_getter, ntfy=ntfy)
 
     @classmethod
     def get_camera(cls, config: typing.Mapping[str, typing.Any]) -> AsiZwoCamera:

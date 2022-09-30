@@ -177,20 +177,25 @@ class PictureThreadConfiguration:
                 setattr(instance, path, value)
 
         time_records = ("start_record", "end_record")
-        for tr in time_records:
-            t_value_ = getattr(instance, tr)
-            if t_value_ != "None":
-                t_value = _read_time(t_value_)
-            else:
-                t_value = None
-            setattr(instance, tr, t_value)
+        tr_values = [getattr(instance, tr) for tr in time_records]
+        if any([v == "None" for v in tr_values]):
+            for tr in time_records:
+                setattr(instance, tr, None)
+        else:
+            for tr in time_records:
+                setattr(instance, tr, _read_time(getattr(instance, tr)))
 
         return instance
 
 
 class PictureThread(SkyThread):
-    def __init__(self, name: str, config_getter: ConfigurationGetter) -> None:
-        super().__init__(config_getter, name, tags=["camera_flash"])
+    def __init__(
+        self,
+        name: str,
+        config_getter: ConfigurationGetter,
+        ntfy: typing.Optional[bool] = True,
+    ) -> None:
+        super().__init__(config_getter, name, tags=["camera_flash"], ntfy=ntfy)
         full_class_name = str(type(self))
         if full_class_name.endswith("'>"):
             full_class_name = full_class_name[:-2]
@@ -200,6 +205,7 @@ class PictureThread(SkyThread):
             self._class_name = full_class_name
         else:
             self._class_name = full_class_name[last_point + 1 :]
+        self._nb_pictures = 0
 
     @classmethod
     def get_camera(cls, config: typing.Mapping[str, typing.Any]) -> Camera:
@@ -295,6 +301,13 @@ class PictureThread(SkyThread):
             config.start_record, config.end_record, datetime.datetime.now().time()
         ):
 
+            if config.end_record:
+                self._status.set_misc(
+                    "mode", f"active, will stop at {config.end_record}"
+                )
+            else:
+                self._status.set_misc("mode", "active (always)")
+
             # getting filename and general meta data
             _logger.debug("getting metadata")
             filename, gnrl_metadata = Meta.get()
@@ -323,8 +336,14 @@ class PictureThread(SkyThread):
                 filename,
             )
 
+            self._nb_pictures += 1
+            self._status.set_misc("number pictures taken", str(self._nb_pictures))
+
         else:
             _logger.debug("not active time, skipping")
+            self._status.set_misc(
+                "mode", f"not active, should start at {config.start_record}"
+            )
 
         # sleeping a bit
         now = time.time()

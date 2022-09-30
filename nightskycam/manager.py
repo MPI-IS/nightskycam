@@ -37,7 +37,7 @@ def deploy_tests(config_getter: ConfigurationGetter) -> None:
     skythread_classes: typing.List[typing.Type[SkyThread]] = get_skythreads(
         config_getter.get_global()
     )
-    skythreads = [class_(config_getter) for class_ in skythread_classes]
+    skythreads = [class_(config_getter,ntfy=False) for class_ in skythread_classes]
 
     # checking if each skythread "agrees" with its configuration
     config_errors: typing.Dict[str, str] = {}
@@ -85,7 +85,7 @@ def _ntfy(
     if ntfy_config is not None:
         url, topic = ntfy_config
         try:
-            ntfy.publish(url, topic, 3, title, "", tags)
+            ntfy.publish(url, topic, 3, title, "-", tags)
         except Exception as e:
             _logger.error(str(e))
 

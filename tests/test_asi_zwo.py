@@ -42,7 +42,9 @@ def configuration_getter(
         "main": main_config,
         "AsiZwoThread": asizwo_config,
     }
-    config_getter = nightskycam.configuration_getter.DictConfigurationGetter(thread_config)
+    config_getter = nightskycam.configuration_getter.DictConfigurationGetter(
+        thread_config
+    )
 
     yield config_getter
 

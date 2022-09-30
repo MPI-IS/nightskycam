@@ -1,12 +1,14 @@
 import shutil
 import typing
 import logging
+import datetime
 from pathlib import Path
 from ..types import Configuration
 from ..configuration_getter import ConfigurationGetter
 from ..skythread import SkyThread
-from ..status import SkyThreadStatus
+from ..status import Status, SkyThreadStatus, StatusPriority, StatusTags
 from ..running_threads import RunningThreads
+from ..utils import ntfy
 
 _logger = logging.getLogger("status")
 
@@ -55,9 +57,47 @@ class StatusThreadConfiguration:
         return instance
 
 
+def _generate_report(
+    status: typing.Dict[str, SkyThreadStatus]
+) -> typing.Tuple[str, Status]:
+    def _report(name: str, s: SkyThreadStatus):
+        report = []
+        report.append(f"[{s.status.name}] {name}")
+        misc = s.misc
+        if s.status == Status.running:
+            if s._started_running is not None:
+                running_for = datetime.datetime.now() - s._started_running
+                misc["running for"] = str(running_for)
+        if s.status == Status.failure:
+            if s._error is not None:
+                misc["error"] = str(s._error)
+        if s.status in (Status.off, Status.failure):
+            if s._last_time_running is not None:
+                last_time_run = str(datetime.datetime.now() - s._last_time_running)
+                misc["last time run"] = last_time_run
+        if s._started_running is not None:
+            running_for = datetime.datetime.now() - s._started_running
+            misc["running for"] = str(running_for)
+        for k, v in misc.items():
+            report.append(f"{k}: {str(v)}")
+        return "\n".join(report)
+
+    report = "\n\n".join([_report(n, s) for n, s in status.items()])
+    worse_status = sorted(
+        [s.status for s in status.values()], key=lambda status_: status_.value
+    )[-1]
+
+    return (
+        f"\nlocal date and time: {datetime.datetime.now().strftime('%m/%d/%Y, %H:%M:%S')}\n\n{report}",
+        worse_status,
+    )
+
+
 class StatusThread(SkyThread):
-    def __init__(self, config_getter: ConfigurationGetter):
-        super().__init__(config_getter, "status")
+    def __init__(
+        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
+    ):
+        super().__init__(config_getter, "status", ntfy=ntfy)
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
@@ -101,6 +141,10 @@ class StatusThread(SkyThread):
             ),
         )
 
+        self._status.set_misc(
+            "status report expected every (seconds)", str(config.update_every)
+        )
+
         # getting the status of all running threads
         _logger.info("reading thread status")
         status: typing.Dict[str, SkyThreadStatus] = RunningThreads.get_status()
@@ -117,6 +161,16 @@ class StatusThread(SkyThread):
             # to server by an ftp thread, if any running)
             final = config.final_dir / f"{thread_name}.status"
             shutil.copy(tmp, final)
+
+        # if nfty activated, also publishing a report
+        report, status = _generate_report(status)
+        ntfy.safe_publish(
+            self._config_getter,
+            StatusPriority[status],
+            "threads status report",
+            report,
+            [StatusTags[status], "technologist"],
+        )
 
         # sleeping
         _logger.debug(f"sleeping for {config.update_every} seconds")
