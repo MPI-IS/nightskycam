@@ -334,12 +334,12 @@ run_deploy_tests() {
     fi
 }
 
-#if [ "$INTERNET_ON" = true ] ; then
-#    logmsg "running deploy tests 1/2"
-#    run_deploy_tests
-#    logmsg "running deploy tests 2/2"
-#    run_deploy_tests
-#fi
+if [ "$INTERNET_ON" = true ] ; then
+    logmsg "running deploy tests 1/2"
+    run_deploy_tests
+    logmsg "running deploy tests 2/2"
+    run_deploy_tests
+fi
 
 
 #######################
@@ -347,7 +347,7 @@ run_deploy_tests() {
 #######################
 
 logmsg "starting to run nightskycam, will stop and reboot at: ${reboot_time}"
-#${executable} & 
+${executable} & 
 PID=$!
 
 if [ -n ${reboot_time+set} ]; then

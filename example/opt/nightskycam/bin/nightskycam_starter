@@ -2,17 +2,19 @@
 
 ###################################################
 #                                                 #
-# keeping running nightskycam_runner.sh aggressively #
+# keeping running nightskycam_runner aggressively #
 #                                                 #
 ###################################################
 
 run () {
-    # expected to be in $PATH
-    nightskycam_runner.sh &
+    /opt/nightskycam/bin/nightskycam_runner &
     PID=$!
     wait $PID
 }
 
-while :
-      run()
-      sleep 60s
+always=1
+while [ $always -eq 1 ]
+do
+      run
+      sleep 5s
+done
