@@ -226,11 +226,11 @@ if [ -f "${wpa_supplicant}" ]; then
 	else
 	    # restarting the wifi network
 	    logmsg "restarting wifi network"
-	    ifdown_error=$(ifdown --force wlan0 2>&1)
+	    ifdown_error=$(ifconfig wlan0 down 2>&1)
 	    if [ ! -z "$ifdown_error" ]; then
 		logerror "failed restart the wifi network: ${ifdown_error}"
 	    else
-		ifup_error=$(ifup wlan0 2>&1)
+		ifup_error=$(ifconfig wlan0 up 2>&1)
 		logerror "failed restart the wifi network: ${ifup_error}"
 	    fi
 	fi
