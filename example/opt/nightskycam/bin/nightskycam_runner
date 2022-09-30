@@ -30,6 +30,7 @@ is_internet_on () {
 is_internet_on
 
 
+
 #####################
 # logging functions #
 #####################
@@ -72,6 +73,23 @@ logerror () {
     if [ -z ${hostname+x} ]; then hostname=$HOSTNAME; fi
     ntfy "nightskycam runner error" "urgent" "wrench,red_circle" "$1" "nightskycam_${hostname}" "$email"
 }
+
+
+wait_for_internet() {
+    logmsg "waiting 30 seconds for an internet connection"
+    for ((i=1;i<=30;i++)); do
+	is_internet_on
+	if [ "$INTERNET_ON" = true ] ; then
+	    logmsg "internet connection detected"
+	    break
+	fi
+	sleep 1s
+    done
+    logerror "no internet connection, going forward nevertheless"
+}
+
+wait_for_internet
+
 
 # the main folder
 SKYGAZER_DIR="/opt/nightskycam"
