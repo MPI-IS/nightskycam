@@ -39,13 +39,13 @@ class RunningThreads:
         # skythread classes requested by config
         desired = get_skythreads(configuration)
         # stopping those which are currently running, but should not
-        del_indexes = []
-        for index, current in enumerate(cls.skythreads):
-            if current.__class__ not in desired:
-                _logger.info(f"stopping skythread {current.__class__.__name__}")
-                current.stop()
-                del_indexes.append(index)
         with cls._lock:
+            del_indexes = []
+            for index, current in enumerate(cls.skythreads):
+                if current.__class__ not in desired:
+                    _logger.info(f"stopping skythread {current.__class__.__name__}")
+                    current.stop()
+                    del_indexes.append(index)
             for index in del_indexes:
                 del cls.skythreads[index]
         # starting those which are desired but are not running yet
