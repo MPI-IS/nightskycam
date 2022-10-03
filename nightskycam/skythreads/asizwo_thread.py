@@ -27,6 +27,13 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
         meta = self.to_toml()
         return image, meta
 
+    def get_misc(self) -> typing.Dict[str, str]:
+        controls = self.get_controls()
+        return {
+            "temperature": controls["Temperature"].value,
+            "cooler on": controls["CoolerOn"].value,
+        }
+
 
 class AsiZwoThread(PictureThread):
     def __init__(
@@ -35,7 +42,11 @@ class AsiZwoThread(PictureThread):
         super().__init__("asi_zwo", config_getter, ntfy=ntfy)
 
     @classmethod
-    def get_camera(cls, config: typing.Mapping[str, typing.Any]) -> AsiZwoCamera:
+    def get_camera(
+        cls, config: typing.Mapping[str, typing.Any], active: bool
+    ) -> AsiZwoCamera:
+        if not active:
+            config["controllables"]["CoolerOn"] = 0
         return typing.cast(AsiZwoCamera, AsiZwoCamera.from_dict(config))
 
     @classmethod

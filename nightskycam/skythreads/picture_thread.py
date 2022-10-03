@@ -37,13 +37,17 @@ class Camera(object):
     def from_dict(cls, config: typing.Dict[str, typing.Any]) -> object:
         raise NotImplementedError()
 
+    def get_misc(self) -> typing.Dict[str, str]:
+        d: typing.Dict[str, str] = {}
+        return d
+
 
 class DummyCamera(Camera):
     def picture(self) -> typing.Tuple[Image, str]:
         return DummyImage(), "dummy_image"
 
     @classmethod
-    def from_dict(cls, config: typing.Dict[str, typing.Any]) -> object:
+    def from_dict(cls, config: typing.Dict[str, typing.Any], active: bool) -> object:
         return cls()
 
 
@@ -208,7 +212,9 @@ class PictureThread(SkyThread):
         self._nb_pictures = 0
 
     @classmethod
-    def get_camera(cls, config: typing.Mapping[str, typing.Any]) -> Camera:
+    def get_camera(
+        cls, config: typing.Mapping[str, typing.Any], active: bool
+    ) -> Camera:
         raise NotImplementedError()
 
     @classmethod
@@ -265,7 +271,7 @@ class PictureThread(SkyThread):
             PictureThreadConfiguration.from_dict(gnrl_config),
         )
 
-        camera = self.get_camera(gnrl_config)
+        camera = self.get_camera(gnrl_config, False)
 
         filenames = [f"deploy_test_{index}" for index in range(3)]
         metadatas = [
@@ -301,6 +307,10 @@ class PictureThread(SkyThread):
             config.start_record, config.end_record, datetime.datetime.now().time()
         ):
 
+            # getting the camera
+            _logger.debug("getting camera")
+            camera = self.get_camera(gnrl_config, True)
+
             if config.end_record:
                 self._status.set_misc(
                     "mode", f"active, will stop at {config.end_record}"
@@ -313,10 +323,6 @@ class PictureThread(SkyThread):
             filename, gnrl_metadata = Meta.get()
 
             _logger.info(f"taking and saving picture {filename}")
-
-            # getting the camera
-            _logger.debug("getting camera")
-            camera = self.get_camera(gnrl_config)
 
             # taking the picture and related meta data
             _logger.debug("taking picture")
@@ -340,14 +346,20 @@ class PictureThread(SkyThread):
             self._status.set_misc("number pictures taken", str(self._nb_pictures))
 
         else:
+            _logger.debug("getting camera (inactive)")
+            camera = self.get_camera(gnrl_config, False)
             _logger.debug("not active time, skipping")
             self._status.set_misc(
                 "mode", f"not active, should start at {config.start_record}"
             )
 
+        # getting info specific to this camera type
+        for name, value in camera.get_misc().items():
+            self._status.set_misc(name, value)
+
         # sleeping a bit
         now = time.time()
         next_time = _next_picture_time(int(config.picture_every))
-        sleep_time = next_time - now
+        sleep_time = max(0, next_time - now)
         _logger.debug(f"sleeping for {sleep_time} seconds")
         self.sleep(sleep_time)
