@@ -33,11 +33,10 @@ def previous_command() -> typing.Optional[str]:
 def get_remote_command_file(
     url: str, timeout: typing.Optional[float] = 3.0
 ) -> typing.Optional[str]:
+    def _is_valid(filename: str) -> bool:
+        return filename.startswith("command_") and filename.endswith(".txt")
 
-    is_valid = lambda filename: (
-        filename.startswith("command_") and filename.endswith(".txt")
-    )
-    filenames = list_remote_files(url, timeout, is_valid)
+    filenames = list_remote_files(url, timeout, _is_valid)
     if not filenames:
         return None
     if len(filenames) > 1:
@@ -67,9 +66,9 @@ def download_new_command(
     filename = new_command_file(url, timeout)
     if filename is None:
         return None
-    command_folder = command_folder()
-    download_file(url, filename, command_folder)
-    downloaded_file = command_folder / filename
+    folder = command_folder()
+    download_file(url, filename, folder)
+    downloaded_file = folder / filename
     return downloaded_file
 
 
@@ -103,4 +102,6 @@ def execute_new_command(
     result.stdout = output.stdout.decode("utf-8")
     result.stderr = output.stderr.decode("utf-8")
 
+    filepath.unlink()
+    
     return result

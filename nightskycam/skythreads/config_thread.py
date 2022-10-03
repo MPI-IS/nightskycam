@@ -19,15 +19,13 @@ def download_remote_if_better(
     target_folder: Path,
     tmp_folder: typing.Optional[Path] = None,
     main_file: str = "nightskycam_config.toml",
-    timeout: float = 3.0
+    timeout: float = 3.0,
 ) -> typing.Optional[Path]:
 
     # checking what's the "best" remote file
     _logger.debug(f"list configuration files at {url}")
     remote_files = remote_download.list_remote_files(
-        url,
-        timeout,
-        cf.is_valid_configuration_filename
+        url, timeout, cf.is_valid_configuration_filename
     )
 
     # no config files found remotely, exit
@@ -58,17 +56,15 @@ def upgrade_config_file(
     target_folder: Path,
     tmp_folder: typing.Optional[Path] = None,
     main_file: str = "nightskycam_config.toml",
-    timeout: float = 3.0
+    timeout: float = 3.0,
 ) -> None:
 
     # checking what's the "best" remote file
     _logger.debug(f"list configuration files at {url}")
     remote_files = remote_download.list_remote_files(
-        url,
-        timeout,
-        cf.is_valid_configuration_filename
+        url, timeout, cf.is_valid_configuration_filename
     )
-    
+
     # no config files found remotely, exit
     if not remote_files:
         return
@@ -89,7 +85,7 @@ def upgrade_config_file(
 
     # remote is better, so getting it
     _logger.info(f"found a new configuration file at {url}, updating")
-    cf.download_file(url, best_remote_file, target_folder, tmp_folder)
+    remote_download.download_file(url, best_remote_file, target_folder, tmp_folder)
     cf.local_config_cleanup(target_folder, main_file)
     return
 
@@ -165,7 +161,9 @@ class ConfigThread(SkyThread):
 
         # listing the configuration files that can be found
         # at the url provided by the config
-        remote_config_files = cf.list_remote_config_files(config.url)
+        remote_config_files = remote_download.list_remote_files(
+            config.url, 3.0, cf.is_valid_configuration_filename
+        )
         if not remote_config_files:
             raise ValueError(
                 f"failed to find any suitable configuration file at {config.url}"
@@ -178,7 +176,7 @@ class ConfigThread(SkyThread):
         with tempfile.TemporaryDirectory() as local_tmp_dir_:
 
             local_tmp_dir = Path(local_tmp_dir_)
-            cf.download_file(config.url, best_remote_file, local_tmp_dir)
+            remote_download.download_file(config.url, best_remote_file, local_tmp_dir)
             downloaded_file_ = local_tmp_dir / best_remote_file
             if not downloaded_file_.is_file():
                 raise RuntimeError(
