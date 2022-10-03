@@ -103,5 +103,5 @@ def execute_new_command(
     result.stderr = output.stderr.decode("utf-8")
 
     filepath.unlink()
-    
+
     return result

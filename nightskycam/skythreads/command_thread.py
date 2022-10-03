@@ -13,7 +13,9 @@ class CommandThread(SkyThread):
     def __init__(
         self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
     ):
-        super().__init__(config_getter, "command", tags=["hammer_and_wrench"], ntfy=ntfy)
+        super().__init__(
+            config_getter, "command", tags=["hammer_and_wrench"], ntfy=ntfy
+        )
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
@@ -63,8 +65,7 @@ class CommandThread(SkyThread):
             _logger.info(f"executed {output.filename} with return code 0")
         else:
             _logger.error(
-                f"executed {output.filename} with "
-                f"return code {output.return_code}"
+                f"executed {output.filename} with " f"return code {output.return_code}"
             )
         ntfy.safe_publish(
             self._config_getter,
