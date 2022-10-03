@@ -1,27 +1,23 @@
 import logging
 import importlib
-import os
-import wget
 import typing
-import requests
 import toml
-from bs4 import BeautifulSoup as bsoup
 from pathlib import Path
 from .skythread import SkyThread
 from .types import GlobalConfiguration
 from .configuration_getter import FixedConfigurationGetter
 
-_main_folder = Path("/opt/nightskycam")
+_nightskycam_config_folder = Path("/opt/nightskycam")
 
 _logger = logging.getLogger("configuration_file")
 
 
 def configuration_file_folder() -> Path:
-    if not _main_folder.is_dir():
+    if not _nightskycam_config_folder.is_dir():
         raise RuntimeError(
-            f"nightskycam main folder ({_main_folder}) could not be found"
+            f"nightskycam configuration folder ({_nightskycam_config_folder}) could not be found"
         )
-    return _main_folder
+    return _nightskycam_config_folder
 
 
 def _get_class(class_path: str) -> typing.Type:
@@ -205,61 +201,6 @@ def local_config_cleanup(folder: Path, main_file: str) -> None:
     ]
     for path in to_delete:
         path.unlink()
-
-
-def list_remote_config_files(
-    url: str, timeout: typing.Optional[float] = 3.0
-) -> typing.List[str]:
-    """
-    List all the valid configuration files (i.e. of the format
-    'nightskycam_hostname_version.config') that can be found at
-    a remote location.
-    """
-    if timeout is not None:
-        try:
-            page = requests.get(url, timeout=timeout).text
-        except requests.ConnectTimeout:
-            raise ValueError(f"failed to connect to {url} with timeout {timeout}")
-    else:
-        page = requests.get(url).text
-    soup = bsoup(page, "html.parser")
-    nodes = soup.find_all("a")
-    filenames = [node.get("href") for node in nodes]
-    valid_filenames = [
-        filename for filename in filenames if is_valid_configuration_filename(filename)
-    ]
-    return valid_filenames
-
-
-def download_file(
-    url: str,
-    filename: str,
-    target_folder: Path,
-    tmp_folder: typing.Optional[Path] = None,
-) -> None:
-    total_url = f"{url}/{filename}"
-    if not target_folder.is_dir():
-        raise FileNotFoundError(
-            f"failed to download {total_url} to {target_folder}: " f"folder not found"
-        )
-    if tmp_folder is not None:
-        if not tmp_folder.is_dir():
-            raise FileNotFoundError(
-                f"failed to download {total_url} to {tmp_folder}: " f"folder not found"
-            )
-        os.chdir(tmp_folder)
-    else:
-        os.chdir(target_folder)
-    try:
-        wget.download(total_url, bar=None)
-    except Exception as e:
-        raise RuntimeError(f"failed to download {total_url} to {target_folder}: {e}")
-    if not (Path(os.getcwd()) / filename).is_file():
-        raise RuntimeError(
-            f"failed to download {total_url} to {os.getcwd()}: " f"(unknown reason)"
-        )
-    if target_folder is not None:
-        (Path(os.getcwd()) / filename).rename(target_folder / filename)
 
 
 def current_config_file() -> str:
