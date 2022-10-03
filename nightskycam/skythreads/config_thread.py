@@ -9,6 +9,7 @@ from ..locks import Locks
 from ..types import Configuration
 from ..configuration_getter import ConfigurationGetter
 from ..utils import ntfy
+from ..utils import remote_download
 
 _logger = logging.getLogger("config")
 
@@ -18,11 +19,16 @@ def download_remote_if_better(
     target_folder: Path,
     tmp_folder: typing.Optional[Path] = None,
     main_file: str = "nightskycam_config.toml",
+    timeout: float = 3.0
 ) -> typing.Optional[Path]:
 
     # checking what's the "best" remote file
     _logger.debug(f"list configuration files at {url}")
-    remote_files = cf.list_remote_config_files(url)
+    remote_files = remote_download.list_remote_files(
+        url,
+        timeout,
+        cf.is_valid_configuration_filename
+    )
 
     # no config files found remotely, exit
     if not remote_files:
@@ -43,7 +49,7 @@ def download_remote_if_better(
 
     # remote is better, so getting it
     _logger.info(f"found a new configuration file at {url}, updating")
-    cf.download_file(url, best_remote_file, target_folder, tmp_folder)
+    remote_download.download_file(url, best_remote_file, target_folder, tmp_folder)
     return target_folder / best_remote_file
 
 
@@ -52,12 +58,17 @@ def upgrade_config_file(
     target_folder: Path,
     tmp_folder: typing.Optional[Path] = None,
     main_file: str = "nightskycam_config.toml",
+    timeout: float = 3.0
 ) -> None:
 
     # checking what's the "best" remote file
     _logger.debug(f"list configuration files at {url}")
-    remote_files = cf.list_remote_config_files(url)
-
+    remote_files = remote_download.list_remote_files(
+        url,
+        timeout,
+        cf.is_valid_configuration_filename
+    )
+    
     # no config files found remotely, exit
     if not remote_files:
         return
