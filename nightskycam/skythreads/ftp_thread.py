@@ -155,7 +155,7 @@ class FtpThread(SkyThread):
         )
 
         # deleting existing deploy test files
-        glob = "deploy_test_*.bmp"
+        glob = "deploy_test_*.*"
         deploy_files = config.local_dir.glob(glob)
         for deploy_file in deploy_files:
             deploy_file.unlink()
