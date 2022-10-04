@@ -179,13 +179,16 @@ class FtpThread(SkyThread):
 
         # uploading the content of the local directory (i.e
         # the test images writen above)
-        _upload_files(
-            config.get_config(),
-            config.local_dir,
-            get_remote_dir(),
-            config.batch,
-            glob=glob,
-        )
+        nb_uploaded = 0
+        while nb_uploaded < nb_images:
+            nb_files, _ = _upload_files(
+                config.get_config(),
+                config.local_dir,
+                get_remote_dir(),
+                config.batch,
+                glob=glob,
+            )
+            nb_uploaded += nb_files
 
         # after upload, the local images should have been deleted locally
         for path in images.keys():
@@ -218,10 +221,7 @@ class FtpThread(SkyThread):
         # uploading all files that are in the
         # local folder
         nb_files, uploaded_size = _upload_files(
-            config.get_config(),
-            config.local_dir,
-            get_remote_dir(),
-            config.batch
+            config.get_config(), config.local_dir, get_remote_dir(), config.batch
         )
 
         self._nb_files += nb_files
