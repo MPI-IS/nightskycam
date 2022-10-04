@@ -19,7 +19,7 @@ def download_remote_if_better(
     target_folder: Path,
     tmp_folder: typing.Optional[Path] = None,
     main_file: str = "nightskycam_config.toml",
-    timeout: float = 3.0,
+    timeout: float = 10.0,
 ) -> typing.Optional[Path]:
 
     # checking what's the "best" remote file
@@ -56,7 +56,7 @@ def upgrade_config_file(
     target_folder: Path,
     tmp_folder: typing.Optional[Path] = None,
     main_file: str = "nightskycam_config.toml",
-    timeout: float = 3.0,
+    timeout: float = 10.0,
 ) -> None:
 
     # checking what's the "best" remote file
@@ -162,7 +162,7 @@ class ConfigThread(SkyThread):
         # listing the configuration files that can be found
         # at the url provided by the config
         remote_config_files = remote_download.list_remote_files(
-            config.url, 3.0, cf.is_valid_configuration_filename
+            config.url, 10.0, cf.is_valid_configuration_filename
         )
         if not remote_config_files:
             raise ValueError(

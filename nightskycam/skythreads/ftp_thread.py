@@ -30,11 +30,12 @@ class FtpThreadConfiguration:
         self.username: str = "Anomymous"
         self.passwd: str = "not entered"
         self.local_dir: Path = "undefined"
+        self.batch: int = -1
 
     @classmethod
     def from_dict(cls, config: Configuration) -> object:
         instance = cls()
-        mandatory = ("host", "upload_every")
+        mandatory = ("host", "upload_every", "batch")
         for m in mandatory:
             try:
                 value = config[m]
@@ -45,7 +46,7 @@ class FtpThreadConfiguration:
                 )
         instance.host = str(config["host"])
 
-        to_int = ("upload_every", "port")
+        to_int = ("upload_every", "port", "batch")
         for field in to_int:
             try:
                 value = config[field]
@@ -106,15 +107,19 @@ def _upload_files(
     config: FtpConfig,
     local_dir: Path,
     remote_dir: Path,
+    batch_size: int,
+    glob: typing.Optional[str] = None,
 ) -> typing.Tuple[int, int]:
     if not local_dir.is_dir():
         raise FileNotFoundError(
             f"failing to upload the content of " f"{local_dir}: no such directory"
         )
     if not _is_folder_empty(local_dir):
-        _logger.info(f"uploading content of {local_dir}")
+        _logger.info(f"uploading some of the content of {local_dir}")
         with get_ftp(config, remote_dir) as ftp:
-            return ftp.upload_dir(local_dir, delete_local=True)
+            return ftp.upload_dir(
+                local_dir, delete_local=True, batch_size=batch_size, glob=glob
+            )
     return 0, 0
 
 
@@ -149,6 +154,12 @@ class FtpThread(SkyThread):
             FtpThreadConfiguration, FtpThreadConfiguration.from_dict(config_)
         )
 
+        # deleting existing deploy test files
+        glob = "deploy_test_*.bmp"
+        deploy_files = config.local_dir.glob(glob)
+        for deploy_file in deploy_files:
+            deploy_file.unlink()
+
         # creating testing images that will be uploaded
         nb_images = 3
         height = 340
@@ -172,6 +183,8 @@ class FtpThread(SkyThread):
             config.get_config(),
             config.local_dir,
             get_remote_dir(),
+            config.batch,
+            glob=glob,
         )
 
         # after upload, the local images should have been deleted locally
@@ -208,6 +221,7 @@ class FtpThread(SkyThread):
             config.get_config(),
             config.local_dir,
             get_remote_dir(),
+            config.batch
         )
 
         self._nb_files += nb_files

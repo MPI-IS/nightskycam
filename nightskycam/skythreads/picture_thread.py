@@ -33,8 +33,7 @@ class Camera(object):
     def picture(self) -> typing.Tuple[Image, str]:
         raise NotImplementedError()
 
-    @classmethod
-    def from_dict(cls, config: typing.Dict[str, typing.Any]) -> object:
+    def configure(self, config: typing.Dict[str, typing.Any]) -> None:
         raise NotImplementedError()
 
     def get_misc(self) -> typing.Dict[str, str]:
@@ -43,12 +42,14 @@ class Camera(object):
 
 
 class DummyCamera(Camera):
+    def __init__(self) -> None:
+        super().__init__()
+
     def picture(self) -> typing.Tuple[Image, str]:
         return DummyImage(), "dummy_image"
 
-    @classmethod
-    def from_dict(cls, config: typing.Dict[str, typing.Any], active: bool) -> object:
-        return cls()
+    def configure(self, config: typing.Dict[str, typing.Any]) -> None:
+        return
 
 
 def _read_time(date_str: str) -> datetime.time:
@@ -210,11 +211,10 @@ class PictureThread(SkyThread):
         else:
             self._class_name = full_class_name[last_point + 1 :]
         self._nb_pictures = 0
+        self._camera: typing.Optional[Camera] = None
 
     @classmethod
-    def get_camera(
-        cls, config: typing.Mapping[str, typing.Any], active: bool
-    ) -> Camera:
+    def get_camera(cls) -> Camera:
         raise NotImplementedError()
 
     @classmethod
@@ -271,7 +271,7 @@ class PictureThread(SkyThread):
             PictureThreadConfiguration.from_dict(gnrl_config),
         )
 
-        camera = self.get_camera(gnrl_config, False)
+        camera = self.get_camera()
 
         filenames = [f"deploy_test_{index}" for index in range(3)]
         metadatas = [
@@ -291,7 +291,54 @@ class PictureThread(SkyThread):
                 filename,
             )
 
-    def _execute(self, sleep: bool = True):
+    def _update_config_for_inactive(
+        self, config: typing.Dict[str, typing.Any]
+    ) -> typing.Dict[str, typing.Any]:
+        return config
+
+    def _step_active(self, config: PictureThreadConfiguration) -> None:
+
+        if config.end_record:
+            self._status.set_misc("mode", f"active, will stop at {config.end_record}")
+        else:
+            self._status.set_misc("mode", "active (always)")
+
+        # getting filename and general meta data
+        _logger.debug("getting metadata")
+        filename, gnrl_metadata = Meta.get()
+
+        _logger.info(f"taking and saving picture {filename}")
+
+        # taking the picture and related meta data
+        if self._camera is not None:
+            _logger.debug("taking picture")
+            image, image_metadata = self._camera.picture()
+
+        # complete meta data
+        metadata = f"{gnrl_metadata}\n{image_metadata}"
+
+        # saving the image and related metadata
+        _logger.debug(f"saving {filename}")
+        _save_data(
+            config.tmp_dir,
+            config.final_dir,
+            config.latest_dir,
+            image,
+            metadata,
+            filename,
+        )
+
+        self._nb_pictures += 1
+        self._status.set_misc("number pictures taken", str(self._nb_pictures))
+
+    def _step_inactive(self, config: PictureThreadConfiguration):
+
+        _logger.debug("not active time, skipping")
+        self._status.set_misc(
+            "mode", f"not active, should start at {config.start_record}"
+        )
+
+    def _execute(self):
 
         # reading the current configuration
         _logger.debug("reading configuration")
@@ -302,59 +349,30 @@ class PictureThread(SkyThread):
             PictureThreadConfiguration.from_dict(gnrl_config),
         )
 
-        # pictures are taken only during "active time" (most likely: the night)
-        if _is_active(
+        active = _is_active(
             config.start_record, config.end_record, datetime.datetime.now().time()
-        ):
+        )
 
-            # getting the camera
+        if self._camera is None:
             _logger.debug("getting camera")
-            camera = self.get_camera(gnrl_config, True)
+            self._camera = self.get_camera()
 
-            if config.end_record:
-                self._status.set_misc(
-                    "mode", f"active, will stop at {config.end_record}"
-                )
+        # pictures are taken only during "active time" (most likely: the night)
+        try:
+            if active:
+                self._camera.configure(gnrl_config)
+                self._step_active(config)
+
             else:
-                self._status.set_misc("mode", "active (always)")
-
-            # getting filename and general meta data
-            _logger.debug("getting metadata")
-            filename, gnrl_metadata = Meta.get()
-
-            _logger.info(f"taking and saving picture {filename}")
-
-            # taking the picture and related meta data
-            _logger.debug("taking picture")
-            image, image_metadata = camera.picture()
-
-            # complete meta data
-            metadata = f"{gnrl_metadata}\n{image_metadata}"
-
-            # saving the image and related metadata
-            _logger.debug(f"saving {filename}")
-            _save_data(
-                config.tmp_dir,
-                config.final_dir,
-                config.latest_dir,
-                image,
-                metadata,
-                filename,
-            )
-
-            self._nb_pictures += 1
-            self._status.set_misc("number pictures taken", str(self._nb_pictures))
-
-        else:
-            _logger.debug("getting camera (inactive)")
-            camera = self.get_camera(gnrl_config, False)
-            _logger.debug("not active time, skipping")
-            self._status.set_misc(
-                "mode", f"not active, should start at {config.start_record}"
-            )
+                gnrl_config = self._update_config_for_inactive(gnrl_config)
+                self._camera.configure(gnrl_config)
+                self._step_inactive(config)
+        except Exception as e:
+            self._camera = None
+            raise e
 
         # getting info specific to this camera type
-        for name, value in camera.get_misc().items():
+        for name, value in self._camera.get_misc().items():
             self._status.set_misc(name, value)
 
         # sleeping a bit

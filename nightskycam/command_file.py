@@ -31,7 +31,7 @@ def previous_command() -> typing.Optional[str]:
 
 
 def get_remote_command_file(
-    url: str, timeout: typing.Optional[float] = 3.0
+    url: str, timeout: typing.Optional[float] = 10.0
 ) -> typing.Optional[str]:
     def _is_valid(filename: str) -> bool:
         return filename.startswith("command_") and filename.endswith(".txt")
@@ -47,7 +47,7 @@ def get_remote_command_file(
 
 
 def new_command_file(
-    url: str, timeout: typing.Optional[float] = 3.0
+    url: str, timeout: typing.Optional[float] = 10.0
 ) -> typing.Optional[str]:
 
     filename = get_remote_command_file(url, timeout)
@@ -60,7 +60,7 @@ def new_command_file(
 
 
 def download_new_command(
-    url: str, timeout: typing.Optional[float] = 3.0
+    url: str, timeout: typing.Optional[float] = 10.0
 ) -> typing.Optional[Path]:
 
     filename = new_command_file(url, timeout)
@@ -83,7 +83,7 @@ class CommandResult:
 
 
 def execute_new_command(
-    url: str, timeout: typing.Optional[float] = 3.0
+    url: str, timeout: typing.Optional[float] = 10.0
 ) -> typing.Optional[CommandResult]:
 
     filepath = download_new_command(url, timeout)

@@ -226,6 +226,8 @@ class Ftp:
         local_path: Path,
         extensions: typing.Sequence[str] = None,
         delete_local: bool = False,
+        batch_size: typing.Optional[int] = None,
+        glob: typing.Optional[str] = None,
     ) -> typing.Tuple[int, int]:
 
         if not local_path.is_dir():
@@ -240,7 +242,13 @@ class Ftp:
             for extension in extensions:
                 files.extend(local_path.glob("*." + extension))
         else:
-            files = list(filter(lambda x: x.is_file(), local_path.glob("*")))
+            if glob is None:
+                files = list(filter(lambda x: x.is_file(), local_path.glob("*")))
+            else:
+                files = list(filter(lambda x: x.is_file(), local_path.glob(glob)))
+
+        if batch_size and len(files) > batch_size:
+            files = files[:batch_size]
 
         if files:
             _logger.info(f"uploading {len(files)} file(s) to {self.host}")

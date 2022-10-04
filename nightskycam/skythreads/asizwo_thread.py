@@ -16,11 +16,8 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
     def __init__(self, index: int):
         super().__init__(index)
 
-    @classmethod
-    def from_dict(cls, path: typing.Mapping[str, typing.Any]) -> object:
-        instance = cls(0)
-        instance.configure_from_toml(path)
-        return instance
+    def configure(self, config: typing.Mapping[str, typing.Any]) -> None:
+        self.configure_from_toml(config)
 
     def picture(self) -> typing.Tuple[Image, str]:
         image = self.capture()
@@ -42,12 +39,8 @@ class AsiZwoThread(PictureThread):
         super().__init__("asi_zwo", config_getter, ntfy=ntfy)
 
     @classmethod
-    def get_camera(
-        cls, config: typing.Mapping[str, typing.Any], active: bool
-    ) -> AsiZwoCamera:
-        if not active:
-            config["controllables"]["CoolerOn"] = 0
-        return typing.cast(AsiZwoCamera, AsiZwoCamera.from_dict(config))
+    def get_camera(cls) -> AsiZwoCamera:
+        return AsiZwoCamera(0)
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
@@ -56,8 +49,15 @@ class AsiZwoThread(PictureThread):
 
         config = config_getter.get("AsiZwoThread")
         try:
-            AsiZwoCamera.from_dict(config)
+            cam = AsiZwoCamera(0)
+            cam.configure(config)
         except Exception as e:
             return f"error with AsiZwoThread configuration: {e}"
 
         return None
+
+    def _update_config_for_inactive(
+        self, config: typing.Dict[str, typing.Any]
+    ) -> typing.Dict[str, typing.Any]:
+        config["controllables"]["CoolerOn"] = 0
+        return config
