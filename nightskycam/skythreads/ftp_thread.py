@@ -8,6 +8,7 @@ from ..utils.ftp import get_ftp, FtpConfig
 from ..types import Configuration
 from ..configuration_getter import ConfigurationGetter
 from ..skythread import SkyThread
+from ..utils import folder_stats
 import numpy as np
 
 _logger = logging.getLogger("ftp")
@@ -228,7 +229,23 @@ class FtpThread(SkyThread):
         self._uploaded_size += uploaded_size
 
         self._status.set_misc("uploaded files", str(self._nb_files))
-        self._status.set_misc("uploaded size", str(self._uploaded_size))
+        self._status.set_misc(
+            "uploaded size", folder_stats.convert_size(self._uploaded_size)
+        )
+
+        remaining_files: typing.Dict[str, int] = folder_stats.list_nb_files(
+            config.local_dir
+        )
+        remaining_files_str = ", ".join(
+            [
+                f"{extension}: {nb_files}"
+                for extension, nb_files in remaining_files.items()
+            ]
+        )
+        self._status.set_misc("remaining files to upload", remaining_files_str)
+        self._status.set_misc(
+            "remaining size to upload", str(folder_stats.folder_size(config.local_dir))
+        )
 
         # sleeping a bit
         _logger.debug(f"sleeping {config.upload_every} seconds")

@@ -9,6 +9,7 @@ from ..skythread import SkyThread
 from ..status import Status, SkyThreadStatus, StatusPriority, StatusTags
 from ..running_threads import RunningThreads
 from ..utils import ntfy
+from ..utils import folder_stats
 
 _logger = logging.getLogger("status")
 
@@ -66,18 +67,18 @@ def _generate_report(
         misc = s.misc
         if s.status == Status.running:
             if s._started_running is not None:
-                running_for = datetime.datetime.now() - s._started_running
-                misc["running for"] = str(running_for)
+                running_for = str(datetime.datetime.now() - s._started_running)
+                misc["running for"] = running_for[: running_for.index(".")]
         if s.status == Status.failure:
             if s._error is not None:
                 misc["error"] = str(s._error)
         if s.status in (Status.off, Status.failure):
             if s._last_time_running is not None:
                 last_time_run = str(datetime.datetime.now() - s._last_time_running)
-                misc["last time run"] = last_time_run
+                misc["last time run"] = last_time_run[: last_time_run.index(".")]
         if s._started_running is not None:
-            running_for = datetime.datetime.now() - s._started_running
-            misc["running for"] = str(running_for)
+            running_for = str(datetime.datetime.now() - s._started_running)
+            misc["running for"] = running_for[: running_for.index(".")]
         for k, v in misc.items():
             report.append(f"{k}: {str(v)}")
         return "\n".join(report)
@@ -87,8 +88,15 @@ def _generate_report(
         [s.status for s in status.values()], key=lambda status_: status_.value
     )[-1]
 
+    misc_infos: typing.List[str] = []
+    misc_infos.append(
+        f"local date and time: {datetime.datetime.now().strftime('%m/%d/%Y, %H:%M:%S')}"
+    )
+    misc_infos.append(folder_stats.disk_stats())
+    misc_infos_str = "\n".join(misc_infos)
+
     return (
-        f"\nlocal date and time: {datetime.datetime.now().strftime('%m/%d/%Y, %H:%M:%S')}\n\n{report}",
+        f"\n{misc_infos_str}\n\n{report}",
         worse_status,
     )
 
@@ -150,17 +158,17 @@ class StatusThread(SkyThread):
         status: typing.Dict[str, SkyThreadStatus] = RunningThreads.get_status()
 
         # writing content of status into files
-        for thread_name, instance in status.items():
-            _logger.debug(f"creating status file for {thread_name}")
-            # writing into files, in tmp folders
-            status_str = str(instance)
-            tmp = config.tmp_dir / f"{thread_name}.status"
-            with open(tmp, "w+") as f:
-                f.write(status_str)
-            # copying to final folder (where may be uploaded
-            # to server by an ftp thread, if any running)
-            final = config.final_dir / f"{thread_name}.status"
-            shutil.copy(tmp, final)
+        #for thread_name, instance in status.items():
+        #    _logger.debug(f"creating status file for {thread_name}")
+        #    # writing into files, in tmp folders
+        #    status_str = str(instance)
+        #    tmp = config.tmp_dir / f"{thread_name}.status"
+        #    with open(tmp, "w+") as f:
+        #        f.write(status_str)
+        #    # copying to final folder (where may be uploaded
+        #    # to server by an ftp thread, if any running)
+        #    final = config.final_dir / f"{thread_name}.status"
+        #    shutil.copy(tmp, final)
 
         # if nfty activated, also publishing a report
         report, status = _generate_report(status)
