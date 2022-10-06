@@ -1,4 +1,3 @@
-import shutil
 import typing
 import logging
 import datetime
@@ -158,7 +157,7 @@ class StatusThread(SkyThread):
         status: typing.Dict[str, SkyThreadStatus] = RunningThreads.get_status()
 
         # writing content of status into files
-        #for thread_name, instance in status.items():
+        # for thread_name, instance in status.items():
         #    _logger.debug(f"creating status file for {thread_name}")
         #    # writing into files, in tmp folders
         #    status_str = str(instance)

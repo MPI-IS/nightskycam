@@ -39,7 +39,12 @@ def list_nb_files(path: Path) -> typing.Dict[str, int]:
 
 
 def folder_size(path: Path) -> int:
-    return sum(os.path.getsize(f) for f in os.listdir(str(path)) if os.path.isfile(f))
+    folder = str(path)
+    return sum(
+        os.path.getsize(folder + os.sep + f)
+        for f in os.listdir(folder)
+        if os.path.isfile(folder + os.sep + f)
+    )
 
 
 def disk_stats() -> str:
