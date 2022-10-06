@@ -244,7 +244,7 @@ class FtpThread(SkyThread):
         )
         self._status.set_misc("remaining files to upload", remaining_files_str)
         self._status.set_misc(
-            "remaining size to upload", str(folder_stats.folder_size(config.local_dir))
+            "remaining size to upload", folder_stats.convert_size(folder_stats.folder_size(config.local_dir))
         )
 
         # sleeping a bit
