@@ -21,7 +21,7 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
 
     def picture(self) -> typing.Tuple[Image, str]:
         image = self.capture()
-        meta = self.to_toml(specify_auto=False)
+        meta = self.to_toml(specify_auto=False, non_writable=True)
         return image, meta
 
     def get_misc(self) -> typing.Dict[str, str]:
