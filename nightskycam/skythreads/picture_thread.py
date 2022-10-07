@@ -1,22 +1,35 @@
+import numpy as np
 import typing
 import time
 import shutil
 import datetime
 import logging
 from pathlib import Path
+import nptyping as npt
 from ..configuration_getter import ConfigurationGetter
 from ..types import Configuration
 from ..skythread import SkyThread
 from ..metadata import Meta
+from ..utils import postprocess
 
 _logger = logging.getLogger("picture")
 
 
 class Image:
+
+    def __init__(self)->None:
+        pass
+
     def save(self, path: Path) -> None:
         raise NotImplementedError()
 
     def display(self, label: str = "") -> None:
+        raise NotImplementedError()
+
+    def get_data(self) -> npt.NDArray:
+        raise NotImplementedError()
+
+    def set_data(self, image: npt.NDArray) -> None:
         raise NotImplementedError()
 
 
@@ -27,6 +40,12 @@ class DummyImage(Image):
 
     def display(cls, label: str = "") -> None:
         print("pretend display of dummy image")
+
+    def get_data(self) -> npt.NDArray:
+        return np.array([0])
+
+    def set_data(self, image: npt.NDArray) -> None:
+        pass
 
 
 class Camera(object):
@@ -109,6 +128,7 @@ def _save_data(
     image: Image,
     metadata: str,
     filename: str,
+    file_format: str,
 ) -> None:
 
     # making sure the required folders exist
@@ -117,9 +137,9 @@ def _save_data(
 
     # saving the image in tmp_dir, then copy it to
     # final_dir and latest_dir.
-    image_tmp_path = tmp_dir / f"{filename}.tiff"
-    image_final_path = final_dir / f"{filename}.tiff"
-    image_latest_path = latest_dir / "latest.tiff"
+    image_tmp_path = tmp_dir / f"{filename}.{file_format}"
+    image_final_path = final_dir / f"{filename}.{file_format}"
+    image_latest_path = latest_dir / f"latest.{file_format}"
     metadata_tmp_path = tmp_dir / f"{filename}.toml"
     metadata_final_path = final_dir / f"{filename}.toml"
     metadata_latest_path = latest_dir / "latest.txt"
@@ -140,6 +160,8 @@ class PictureThreadConfiguration:
         "picture_every",
         "start_record",
         "end_record",
+        "postprocess",
+        "file_format"
     )
 
     def __init__(self):
@@ -149,7 +171,9 @@ class PictureThreadConfiguration:
         self.picture_every: int = -1
         self.start_record: datetime.time = datetime.time(hour=0, minute=0)
         self.end_record: datetime.time = datetime.time(hour=0, minute=0)
-
+        self.postprocess: typing.Dict[str, typing.Any] = {}
+        self.file_format: str = "tiff"
+        
     @classmethod
     def from_dict(cls, config: Configuration) -> object:
 
@@ -190,6 +214,11 @@ class PictureThreadConfiguration:
             for tr in time_records:
                 setattr(instance, tr, _read_time(getattr(instance, tr)))
 
+        if "postprocess" in config:
+            instance.postprocess = config["postprocess"]
+
+        instance.file_format = str(config["file_format"])
+            
         return instance
 
 
@@ -261,6 +290,13 @@ class PictureThread(SkyThread):
                         f"'{config[dk]}', expected format: 'hour:minute': {e}"
                     )
 
+
+        if "postprocess" in config:
+            try:
+                postprocess.apply(np.array([0]), config["postprocess"], dry_run=True)
+            except Exception as e:
+                raise ValueError(f"Config error for {class_name}, postprocess: {e}")
+
         return None
 
     def deploy_test(self) -> None:
@@ -272,7 +308,8 @@ class PictureThread(SkyThread):
         )
 
         camera = self.get_camera()
-
+        camera.configure(gnrl_config)
+        
         filenames = [f"deploy_test_{index}" for index in range(3)]
         metadatas = [
             f"deploy test metadata for file {filename}" for filename in filenames
@@ -282,6 +319,13 @@ class PictureThread(SkyThread):
 
             image, image_metadata = camera.picture()
 
+            if config.postprocess:
+                np_image = image.get_data()
+                np_image, postprocess_metadata = postprocess.apply(
+                    np_image, config.postprocess, dry_run=False
+                )
+                image.set_data(np_image)
+                
             _save_data(
                 config.tmp_dir,
                 config.final_dir,
@@ -289,6 +333,7 @@ class PictureThread(SkyThread):
                 image,
                 metadata + "\n" + image_metadata,
                 filename,
+                config.file_format
             )
 
     def _update_config_for_inactive(
@@ -314,6 +359,16 @@ class PictureThread(SkyThread):
             _logger.debug("taking picture")
             image, image_metadata = self._camera.picture()
 
+        # postprocess
+        if config.postprocess:
+            np_image = image.get_data()
+            np_image, postprocess_metadata = postprocess.apply(
+                np_image, config.postprocess, dry_run=False
+            )
+            image.set_data(np_image)
+        else:
+            _logger.info("no 'postprocess' key in the configuration, skipping")
+            
         # complete meta data
         metadata = f"{gnrl_metadata}\n{image_metadata}"
 
@@ -326,6 +381,7 @@ class PictureThread(SkyThread):
             image,
             metadata,
             filename,
+            config.file_format
         )
 
         self._nb_pictures += 1
@@ -362,7 +418,6 @@ class PictureThread(SkyThread):
             if active:
                 self._camera.configure(gnrl_config)
                 self._step_active(config)
-
             else:
                 gnrl_config = self._update_config_for_inactive(gnrl_config)
                 self._camera.configure(gnrl_config)

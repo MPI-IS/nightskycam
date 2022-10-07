@@ -1,15 +1,41 @@
+import cv2
 import typing
+import nptyping as npt
 import camera_zwo_asi
+from PIL import Image as PILImage
+from pathlib import Path
 from .picture_thread import PictureThread, Camera, Image
 from ..configuration_getter import ConfigurationGetter
 
 
-class AsiImage(Image, camera_zwo_asi.Image):
+class AsiImage(Image):
     def __init__(
-        self, image_type: camera_zwo_asi.ImageType, width: int, height: int
+            self, data: npt.NDArray
     ) -> None:
-        super(Image, self).__init__()
-        super(camera_zwo_asi.Image, self).__init__(image_type, width, height)
+        self._data = data
+
+    def save(self, filepath: typing.Union[Path, str]) -> None:
+        if isinstance(filepath, str):
+            filepath = Path(filepath)
+        folder = filepath.parent
+        if not folder.exists():
+            raise FileNotFoundError(
+                f"fails to save image to {folder}: " "folder not found"
+            )
+        cv2.imwrite(str(filepath),self._data)
+        #image = PILImage.fromarray(self._data)
+        #image.save(filepath)
+        
+    def display(self, label: str = "nightskycam") -> None:
+        cv2.imshow(label, self._data)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        
+    def get_data(self) -> npt.NDArray:
+        return self._data
+        
+    def set_data(self, data: npt.NDArray) -> None:
+        self._data = data
 
 
 class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
@@ -20,8 +46,9 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
         self.configure_from_toml(config)
 
     def picture(self) -> typing.Tuple[Image, str]:
-        image = self.capture()
+        nimage = self.capture()
         meta = self.to_toml(specify_auto=False, non_writable=True)
+        image = AsiImage(nimage.get_image())
         return image, meta
 
     def get_misc(self) -> typing.Dict[str, str]:
