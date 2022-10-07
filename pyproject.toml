@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nightskycam"
-version = "1.1.21"
+version = "1.1.22"
 description = "taking pictures at night"
 authors = [
 	"Vincent Berenz <vberenz@tuebingen.mpg.de>",

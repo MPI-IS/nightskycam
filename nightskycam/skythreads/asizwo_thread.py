@@ -65,7 +65,8 @@ class AsiZwoThread(PictureThread):
 
     @classmethod
     def get_camera(cls, config: typing.Mapping[str, typing.Any]) -> AsiZwoCamera:
-        return typing.cast(AsiZwoCamera, AsiZwoCamera.from_dict(config))
+        camera = AsiZwoCamera(0)
+        camera.configure(config)
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:

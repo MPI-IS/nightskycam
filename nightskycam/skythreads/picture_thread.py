@@ -442,6 +442,11 @@ class PictureThread(SkyThread):
         for name, value in self._camera.get_misc().items():
             self._status.set_misc(name, value)
 
+        # adding postprocess info
+        if config.postprocess:
+            for pp in config.postprocess["order"]:
+                self._status.set_misc(pp,str(config.postprocess[pp]))
+            
         # sleeping a bit
         now = time.time()
         next_time = _next_picture_time(int(config.picture_every))
