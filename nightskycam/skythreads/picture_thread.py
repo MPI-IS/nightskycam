@@ -333,7 +333,7 @@ class PictureThread(SkyThread):
                 config.final_dir,
                 config.latest_dir,
                 image,
-                metadata + "\n" + image_metadata,
+                metadata + "\n" + image_metadata + "\n" + postprocess_metadata,
                 filename,
                 config.file_format,
             )
@@ -345,6 +345,8 @@ class PictureThread(SkyThread):
 
     def _step_active(self, config: PictureThreadConfiguration) -> None:
 
+        self._camera.set_control("CoolerOn",1)
+        
         if config.end_record:
             self._status.set_misc("mode", f"active, will stop at {config.end_record}")
         else:
@@ -370,9 +372,10 @@ class PictureThread(SkyThread):
             image.set_data(np_image)
         else:
             _logger.info("no 'postprocess' key in the configuration, skipping")
-
+            postprocess_metadata = ""
+            
         # complete meta data
-        metadata = f"{gnrl_metadata}\n{image_metadata}"
+        metadata = f"{gnrl_metadata}\n{image_metadata}\n{postprocess_metadata}"
 
         # saving the image and related metadata
         _logger.debug(f"saving {filename}")
@@ -391,6 +394,8 @@ class PictureThread(SkyThread):
 
     def _step_inactive(self, config: PictureThreadConfiguration):
 
+        self._camera.set_control("CoolerOn",0)
+        
         _logger.debug("not active time, skipping")
         self._status.set_misc(
             "mode", f"not active, should start at {config.start_record}"
