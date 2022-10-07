@@ -32,41 +32,39 @@ def convert_color(
     return r
 
 
-def np_rebin(
-    image: npt.NDArray, ratio: float = 2.0
-) -> npt.NDArray:
-
+def np_rebin(image: npt.NDArray, ratio: float = 2.0) -> npt.NDArray:
     def _rebin(
-            arr: npt.NDArray,
-            new_shape: typing.Tuple[int,int],
-            original_type
-    )->npt.NDArray:
-        shape = (new_shape[0], arr.shape[0] // new_shape[0],
-                 new_shape[1], arr.shape[1] // new_shape[1])
-        return arr.reshape(shape).mean(-1,dtype=original_type).mean(1,dtype=original_type)
+        arr: npt.NDArray, new_shape: typing.Tuple[int, int], original_type
+    ) -> npt.NDArray:
+        shape = (
+            new_shape[0],
+            arr.shape[0] // new_shape[0],
+            new_shape[1],
+            arr.shape[1] // new_shape[1],
+        )
+        return (
+            arr.reshape(shape)
+            .mean(-1, dtype=original_type)
+            .mean(1, dtype=original_type)
+        )
 
     new_shape = (
-        int(image.shape[0]/ratio),
-        int(image.shape[1]/ratio),
+        int(image.shape[0] / ratio),
+        int(image.shape[1] / ratio),
     )
-    final_shape = (
-        new_shape[0],
-        new_shape[1],
-        1
-    )
+    final_shape = (new_shape[0], new_shape[1], 1)
     binned_channels = [
-        _rebin(channel,new_shape, image.dtype).reshape(final_shape)
-        for channel in np.dsplit(image,3)
+        _rebin(channel, new_shape, image.dtype).reshape(final_shape)
+        for channel in np.dsplit(image, 3)
     ]
-    return np.concatenate(binned_channels,axis=2)
-
+    return np.concatenate(binned_channels, axis=2)
 
 
 def _list_functions() -> typing.List[types.FunctionType]:
     functions = [
         value
         for key, value in sys.modules[__name__].__dict__.items()
-        if inspect.isfunction(value) and key!="apply" and not key.startswith("_")
+        if inspect.isfunction(value) and key != "apply" and not key.startswith("_")
     ]
     return functions
 

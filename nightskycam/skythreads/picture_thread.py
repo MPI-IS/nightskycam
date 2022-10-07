@@ -16,8 +16,7 @@ _logger = logging.getLogger("picture")
 
 
 class Image:
-
-    def __init__(self)->None:
+    def __init__(self) -> None:
         pass
 
     def save(self, path: Path) -> None:
@@ -161,7 +160,7 @@ class PictureThreadConfiguration:
         "start_record",
         "end_record",
         "postprocess",
-        "file_format"
+        "file_format",
     )
 
     def __init__(self):
@@ -173,7 +172,7 @@ class PictureThreadConfiguration:
         self.end_record: datetime.time = datetime.time(hour=0, minute=0)
         self.postprocess: typing.Dict[str, typing.Any] = {}
         self.file_format: str = "tiff"
-        
+
     @classmethod
     def from_dict(cls, config: Configuration) -> object:
 
@@ -218,7 +217,7 @@ class PictureThreadConfiguration:
             instance.postprocess = config["postprocess"]
 
         instance.file_format = str(config["file_format"])
-            
+
         return instance
 
 
@@ -241,9 +240,13 @@ class PictureThread(SkyThread):
             self._class_name = full_class_name[last_point + 1 :]
         self._nb_pictures = 0
         self._camera: typing.Optional[Camera] = None
+        self._previous_active: typing.Optional[bool] = None
 
     @classmethod
-    def get_camera(cls) -> Camera:
+    def get_camera(
+        cls,
+        config: typing.Mapping[str, typing.Any],
+    ) -> Camera:
         raise NotImplementedError()
 
     @classmethod
@@ -290,7 +293,6 @@ class PictureThread(SkyThread):
                         f"'{config[dk]}', expected format: 'hour:minute': {e}"
                     )
 
-
         if "postprocess" in config:
             try:
                 postprocess.apply(np.array([0]), config["postprocess"], dry_run=True)
@@ -307,9 +309,9 @@ class PictureThread(SkyThread):
             PictureThreadConfiguration.from_dict(gnrl_config),
         )
 
-        camera = self.get_camera()
+        camera = self.get_camera(gnrl_config)
         camera.configure(gnrl_config)
-        
+
         filenames = [f"deploy_test_{index}" for index in range(3)]
         metadatas = [
             f"deploy test metadata for file {filename}" for filename in filenames
@@ -325,7 +327,7 @@ class PictureThread(SkyThread):
                     np_image, config.postprocess, dry_run=False
                 )
                 image.set_data(np_image)
-                
+
             _save_data(
                 config.tmp_dir,
                 config.final_dir,
@@ -333,7 +335,7 @@ class PictureThread(SkyThread):
                 image,
                 metadata + "\n" + image_metadata,
                 filename,
-                config.file_format
+                config.file_format,
             )
 
     def _update_config_for_inactive(
@@ -368,7 +370,7 @@ class PictureThread(SkyThread):
             image.set_data(np_image)
         else:
             _logger.info("no 'postprocess' key in the configuration, skipping")
-            
+
         # complete meta data
         metadata = f"{gnrl_metadata}\n{image_metadata}"
 
@@ -381,7 +383,7 @@ class PictureThread(SkyThread):
             image,
             metadata,
             filename,
-            config.file_format
+            config.file_format,
         )
 
         self._nb_pictures += 1
@@ -409,9 +411,12 @@ class PictureThread(SkyThread):
             config.start_record, config.end_record, datetime.datetime.now().time()
         )
 
+        if active != self._previous_active:
+            self._camera = None
+
         if self._camera is None:
             _logger.debug("getting camera")
-            self._camera = self.get_camera()
+            self._camera = self.get_camera(gnrl_config)
 
         # pictures are taken only during "active time" (most likely: the night)
         try:
@@ -425,6 +430,8 @@ class PictureThread(SkyThread):
         except Exception as e:
             self._camera = None
             raise e
+
+        self._previous_active = active
 
         # getting info specific to this camera type
         for name, value in self._camera.get_misc().items():

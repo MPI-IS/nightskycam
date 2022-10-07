@@ -9,9 +9,7 @@ from ..configuration_getter import ConfigurationGetter
 
 
 class AsiImage(Image):
-    def __init__(
-            self, data: npt.NDArray
-    ) -> None:
+    def __init__(self, data: npt.NDArray) -> None:
         self._data = data
 
     def save(self, filepath: typing.Union[Path, str]) -> None:
@@ -22,18 +20,18 @@ class AsiImage(Image):
             raise FileNotFoundError(
                 f"fails to save image to {folder}: " "folder not found"
             )
-        cv2.imwrite(str(filepath),self._data)
-        #image = PILImage.fromarray(self._data)
-        #image.save(filepath)
-        
+        cv2.imwrite(str(filepath), self._data)
+        # image = PILImage.fromarray(self._data)
+        # image.save(filepath)
+
     def display(self, label: str = "nightskycam") -> None:
         cv2.imshow(label, self._data)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-        
+
     def get_data(self) -> npt.NDArray:
         return self._data
-        
+
     def set_data(self, data: npt.NDArray) -> None:
         self._data = data
 
@@ -66,8 +64,8 @@ class AsiZwoThread(PictureThread):
         super().__init__("asi_zwo", config_getter, ntfy=ntfy)
 
     @classmethod
-    def get_camera(cls) -> AsiZwoCamera:
-        return AsiZwoCamera(0)
+    def get_camera(cls, config: typing.Mapping[str, typing.Any]) -> AsiZwoCamera:
+        return typing.cast(AsiZwoCamera, AsiZwoCamera.from_dict(config))
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
