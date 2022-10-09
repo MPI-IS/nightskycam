@@ -2,7 +2,6 @@ import cv2
 import typing
 import nptyping as npt
 import camera_zwo_asi
-from PIL import Image as PILImage
 from pathlib import Path
 from .picture_thread import PictureThread, Camera, Image
 from ..configuration_getter import ConfigurationGetter
@@ -40,8 +39,15 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
     def __init__(self, index: int):
         super().__init__(index)
 
-    def configure(self, config: typing.Mapping[str, typing.Any]) -> None:
+    def _configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         self.configure_from_toml(config)
+
+    def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
+        self._configure(config)
+
+    def inactive_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
+        config["CoolerOn"] = 0
+        self._configure(config)
 
     def picture(self) -> typing.Tuple[Image, str]:
         nimage = self.capture()
@@ -56,6 +62,12 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
             "cooler on": controls["CoolerOn"].value,
         }
 
+    def upon_inactive(self, config: typing.Dict[str, typing.Any]) -> None:
+        return
+
+    def upon_active(self, config: typing.Dict[str, typing.Any]) -> None:
+        return
+
 
 class AsiZwoThread(PictureThread):
     def __init__(
@@ -66,9 +78,8 @@ class AsiZwoThread(PictureThread):
     @classmethod
     def get_camera(cls, config: typing.Mapping[str, typing.Any]) -> AsiZwoCamera:
         camera = AsiZwoCamera(0)
-        camera.configure(config)
         return camera
-        
+
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
 
@@ -82,9 +93,3 @@ class AsiZwoThread(PictureThread):
             return f"error with AsiZwoThread configuration: {e}"
 
         return None
-
-    def _update_config_for_inactive(
-        self, config: typing.Dict[str, typing.Any]
-    ) -> typing.Dict[str, typing.Any]:
-        config["controllables"]["CoolerOn"] = 0
-        return config

@@ -51,12 +51,21 @@ class Camera(object):
     def picture(self) -> typing.Tuple[Image, str]:
         raise NotImplementedError()
 
-    def configure(self, config: typing.Dict[str, typing.Any]) -> None:
-        raise NotImplementedError()
-
     def get_misc(self) -> typing.Dict[str, str]:
         d: typing.Dict[str, str] = {}
         return d
+
+    def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
+        raise NotImplementedError
+
+    def inactive_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
+        raise NotImplementedError
+
+    def upon_active(self, config: typing.Dict[str, typing.Any]) -> None:
+        pass
+
+    def upon_inactive(self, config: typing.Dict[str, typing.Any]) -> None:
+        pass
 
 
 class DummyCamera(Camera):
@@ -66,7 +75,10 @@ class DummyCamera(Camera):
     def picture(self) -> typing.Tuple[Image, str]:
         return DummyImage(), "dummy_image"
 
-    def configure(self, config: typing.Dict[str, typing.Any]) -> None:
+    def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
+        return
+
+    def inactive_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         return
 
 
@@ -240,7 +252,6 @@ class PictureThread(SkyThread):
             self._class_name = full_class_name[last_point + 1 :]
         self._nb_pictures = 0
         self._camera: typing.Optional[Camera] = None
-        self._previous_active: typing.Optional[bool] = None
 
     @classmethod
     def get_camera(
@@ -255,50 +266,7 @@ class PictureThread(SkyThread):
     ) -> typing.Optional[str]:
 
         config = config_getter.get(class_name)
-
-        other_keys = ("tmp_dir", "final_dir", "latest_dir")
-        for ok in other_keys:
-            if ok not in config.keys():
-                raise KeyError(f"Config error for {class_name}, missing key: '{ok}'")
-            path = Path(config[ok])
-            try:
-                path.mkdir(parents=True, exist_ok=True)
-            except Exception as e:
-                raise Exception(
-                    f"Config error for {class_name}, failed to create the {ok} directory {config[ok]}: {e}"
-                )
-        if "picture_every" not in config:
-            raise KeyError(
-                "Config error for {class_name}, missing key: 'picture_every'"
-            )
-        try:
-            int(config["picture_every"])
-        except Exception:
-            value = config["picture_every"]
-            raise ValueError(
-                f"Config error for {class_name}, failed to cast 'picture_every' "
-                f"to in int (value: {value})"
-            )
-
-        datetime_keys = ("start_record", "end_record")
-        for dk in datetime_keys:
-            if dk not in config.keys():
-                raise KeyError(f"Config error for {class_name}, missing key: '{dk}'")
-            if config[dk] != "None":
-                try:
-                    _read_time(config[dk])
-                except Exception as e:
-                    raise ValueError(
-                        f"Config error for {class_name}, failed to parse the value "
-                        f"'{config[dk]}', expected format: 'hour:minute': {e}"
-                    )
-
-        if "postprocess" in config:
-            try:
-                postprocess.apply(np.array([0]), config["postprocess"], dry_run=True)
-            except Exception as e:
-                raise ValueError(f"Config error for {class_name}, postprocess: {e}")
-
+        PictureThreadConfiguration.from_dict(config)
         return None
 
     def deploy_test(self) -> None:
@@ -310,7 +278,7 @@ class PictureThread(SkyThread):
         )
 
         camera = self.get_camera(gnrl_config)
-        camera.configure(gnrl_config)
+        camera.active_configure(gnrl_config)
 
         filenames = [f"deploy_test_{index}" for index in range(3)]
         metadatas = [
@@ -338,15 +306,11 @@ class PictureThread(SkyThread):
                 config.file_format,
             )
 
-    def _update_config_for_inactive(
-        self, config: typing.Dict[str, typing.Any]
-    ) -> typing.Dict[str, typing.Any]:
-        return config
-
     def _step_active(self, config: PictureThreadConfiguration) -> None:
 
-        self._camera.set_control("CoolerOn",1)
-        
+        if self._camera is None:
+            return
+
         if config.end_record:
             self._status.set_misc("mode", f"active, will stop at {config.end_record}")
         else:
@@ -373,7 +337,7 @@ class PictureThread(SkyThread):
         else:
             _logger.info("no 'postprocess' key in the configuration, skipping")
             postprocess_metadata = ""
-            
+
         # complete meta data
         metadata = f"{gnrl_metadata}\n{image_metadata}\n{postprocess_metadata}"
 
@@ -393,15 +357,14 @@ class PictureThread(SkyThread):
         self._status.set_misc("number pictures taken", str(self._nb_pictures))
 
     def _step_inactive(self, config: PictureThreadConfiguration):
-
-        self._camera.set_control("CoolerOn",0)
-        
+        if self._camera is None:
+            return
         _logger.debug("not active time, skipping")
         self._status.set_misc(
             "mode", f"not active, should start at {config.start_record}"
         )
 
-    def _execute(self):
+    def _perform(self):
 
         # reading the current configuration
         _logger.debug("reading configuration")
@@ -416,27 +379,19 @@ class PictureThread(SkyThread):
             config.start_record, config.end_record, datetime.datetime.now().time()
         )
 
-        if active != self._previous_active:
-            self._camera = None
-
         if self._camera is None:
             _logger.debug("getting camera")
             self._camera = self.get_camera(gnrl_config)
 
         # pictures are taken only during "active time" (most likely: the night)
-        try:
-            if active:
-                self._camera.configure(gnrl_config)
-                self._step_active(config)
-            else:
-                gnrl_config = self._update_config_for_inactive(gnrl_config)
-                self._camera.configure(gnrl_config)
-                self._step_inactive(config)
-        except Exception as e:
-            self._camera = None
-            raise e
-
-        self._previous_active = active
+        if active:
+            self._camera.active_configure(gnrl_config)
+            self._camera.upon_active(gnrl_config)
+            self._step_active(config)
+        else:
+            self._camera.inactive_configure(gnrl_config)
+            self._camera.upon_inactive(gnrl_config)
+            self._step_inactive(config)
 
         # getting info specific to this camera type
         for name, value in self._camera.get_misc().items():
@@ -445,11 +400,20 @@ class PictureThread(SkyThread):
         # adding postprocess info
         if config.postprocess:
             for pp in config.postprocess["order"]:
-                self._status.set_misc(pp,str(config.postprocess[pp]))
-            
+                self._status.set_misc(pp, str(config.postprocess[pp]))
+
         # sleeping a bit
         now = time.time()
         next_time = _next_picture_time(int(config.picture_every))
         sleep_time = max(0, next_time - now)
         _logger.debug(f"sleeping for {sleep_time} seconds")
         self.sleep(sleep_time)
+
+    def _execute(self):
+
+        try:
+            self._perform()
+        except Exception as e:
+            _logger.info("error detected, resetting camera")
+            self._camera = None
+            raise e
