@@ -58,7 +58,7 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
     def get_misc(self) -> typing.Dict[str, str]:
         controls = self.get_controls()
         return {
-            "temperature": controls["Temperature"].value,
+            "temperature": controls["Temperature"].value / 10.,
             "cooler on": controls["CoolerOn"].value,
         }
 
