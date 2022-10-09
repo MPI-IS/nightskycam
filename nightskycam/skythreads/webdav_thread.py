@@ -1,17 +1,25 @@
 import subprocess
 import logging
+import typing
 import time
 from pathlib import Path
 from ..skythread import SkyThread
 from ..configuration_getter import ConfigurationGetter
 from ..configuration_file import configuration_file_folder
+from ..types import Configuration
 
-logger = logging.getLogger("webdav")
+_logger = logging.getLogger("webdav")
 
 
 def _run_webdav(target_dir: Path, port: int = 8008) -> subprocess.Popen:
     command = f"exec wsgidav --host=0.0.0.0 --port={port} --root={target_dir} --auth=anonymous"
     process = subprocess.Popen(command, shell=True)
+    return process
+
+
+def get_ip() -> typing.List[str]:
+    ips = subprocess.check_output(["hostname", "-I"])
+    return ips.decode("UTF-8").split()
 
 
 class WebdavThread(SkyThread):
@@ -43,15 +51,17 @@ class WebdavThread(SkyThread):
 
     def on_exit(self) -> None:
         if self._process is not None:
-            self._server.stop()
+            self._process.kill()
+            self._process = None
 
     def _execute(self) -> None:
 
         if not self._started:
-
-            config = self._config_getter.get("HttpThread")
+            config = self._config_getter.get("WebdavThread")
             port = int(config["port"])
-            self._server = HttpServer(configuration_file_folder(), port)
-            self._server.start()
+            ips = ", ".join(get_ip())
+            _logger.info(f"starting webdav server at port {port} (IPs: {ips})")
+            self._process = _run_webdav(configuration_file_folder(), port)
             self._started = True
             self._status.set_misc("serving at port", str(config["port"]))
+            self._status.set_misc("IP(s)", ips)

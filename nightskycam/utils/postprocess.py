@@ -60,6 +60,35 @@ def np_rebin(image: npt.NDArray, ratio: float = 2.0) -> npt.NDArray:
     return np.concatenate(binned_channels, axis=2)
 
 
+def cv2_resize(
+    image: npt.NDArray, ratio: float = 2.0, interpolation: str = "INTER_NEAREST"
+) -> npt.NDArray:
+    if interpolation not in dir(cv2):
+        valid = ", ".join([inter for inter in dir(cv2) if inter.startswith("INTER")])
+        raise ValueError(
+            f"can not perform opencv2 interpolation {interpolation}. "
+            f"Are valid: {valid}"
+        )
+    interpolation_ = getattr(cv2, interpolation)
+
+    def _resize(
+        arr: npt.NDArray, new_shape: typing.Tuple[int, int], interpolation
+    ) -> npt.NDArray:
+        r = np.asarray(cv2.resize(arr, new_shape, interpolation=interpolation)).transpose()
+        return np.flip(r,axis=1)
+        
+    new_shape = (
+        int(image.shape[0] / ratio),
+        int(image.shape[1] / ratio),
+    )
+    final_shape = (new_shape[0], new_shape[1], 1)
+    resized_channels = [
+        _resize(channel, new_shape, interpolation_).reshape(final_shape)
+        for channel in np.dsplit(image, 3)
+    ]
+    return np.concatenate(resized_channels, axis=2)
+
+
 def _list_functions() -> typing.List[types.FunctionType]:
     functions = [
         value
