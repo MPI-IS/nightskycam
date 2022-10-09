@@ -17,9 +17,11 @@ def configuration_file_folder() -> Path:
         raise RuntimeError(
             f"nightskycam configuration folder ({_nightskycam_config_folder}) could not be found"
         )
-    return _nightskycam_config_folder
-
-
+    if not _nightskycam_config_folder.is_symlink():
+        return _nightskycam_config_folder
+    r = _nightskycam_config_folder.parent / _nightskycam_config_folder.readlink()
+    return r
+    
 def _get_class(class_path: str) -> typing.Type:
     """
     class_path: something like "package.subpackage.module.class_name".
