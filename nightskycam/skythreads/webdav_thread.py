@@ -9,15 +9,10 @@ from ..configuration_file import configuration_file_folder
 logger = logging.getLogger("webdav")
 
 
-def _run_webdav(
-        target_dir: Path,
-        port: int = 8008
-)->subprocess.Popen:
+def _run_webdav(target_dir: Path, port: int = 8008) -> subprocess.Popen:
     command = f"exec wsgidav --host=0.0.0.0 --port={port} --root={target_dir} --auth=anonymous"
-    process = subprocess.Popen(command,shell=True)
+    process = subprocess.Popen(command, shell=True)
 
-
-    
 
 class WebdavThread(SkyThread):
     def __init__(
@@ -39,11 +34,10 @@ class WebdavThread(SkyThread):
         except Exception:
             return f"failed to cast the value of they key 'port' ({port}) to an int"
         return None
-    
-    
+
     def deploy_test(self) -> None:
         config = self._config_getter.get("WebdavThread")
-        process  = _run_webdav(configuration_file_folder(),int(config["port"]))
+        process = _run_webdav(configuration_file_folder(), int(config["port"]))
         time.sleep(1)
         process.kill()
 
