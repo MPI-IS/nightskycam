@@ -88,7 +88,7 @@ class AsiZwoThread(PictureThread):
         config = config_getter.get("AsiZwoThread")
         try:
             cam = AsiZwoCamera(0)
-            cam.configure(config)
+            cam._configure(config)
         except Exception as e:
             return f"error with AsiZwoThread configuration: {e}"
 
