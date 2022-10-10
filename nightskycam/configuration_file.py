@@ -21,7 +21,8 @@ def configuration_file_folder() -> Path:
         return _nightskycam_config_folder
     r = _nightskycam_config_folder.parent / _nightskycam_config_folder.readlink()
     return r
-    
+
+
 def _get_class(class_path: str) -> typing.Type:
     """
     class_path: something like "package.subpackage.module.class_name".

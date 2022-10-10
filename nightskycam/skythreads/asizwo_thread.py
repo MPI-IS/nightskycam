@@ -44,11 +44,14 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
 
     def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         self._configure(config)
+        if config["CoolerOn"]>0:
+            super().set_control("CoolerOn",1)
 
     def inactive_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         config["CoolerOn"] = 0
         self._configure(config)
-
+        super().set_control("CoolerOn",0)
+        
     def picture(self) -> typing.Tuple[Image, str]:
         nimage = self.capture()
         meta = self.to_toml(specify_auto=False, non_writable=True)
@@ -58,7 +61,7 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
     def get_misc(self) -> typing.Dict[str, str]:
         controls = self.get_controls()
         return {
-            "temperature": controls["Temperature"].value / 10.,
+            "temperature": controls["Temperature"].value / 10.0,
             "cooler on": controls["CoolerOn"].value,
         }
 

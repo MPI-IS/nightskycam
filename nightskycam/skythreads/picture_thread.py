@@ -399,8 +399,10 @@ class PictureThread(SkyThread):
 
         # adding postprocess info
         if config.postprocess:
-            for pp in config.postprocess["order"]:
-                self._status.set_misc(pp, str(config.postprocess[pp]))
+            self._status.set_misc(
+                "image postprocess",
+                ", ".join([str(pp) for pp in config.postprocess["order"]])
+            )
 
         # sleeping a bit
         now = time.time()

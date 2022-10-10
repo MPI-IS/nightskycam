@@ -4,6 +4,7 @@ from ..skythread import SkyThread
 from ..configuration_getter import ConfigurationGetter
 from ..types import Configuration
 from ..command_file import execute_new_command, get_remote_command_file, CommandResult
+from ..local_command_file import execute_local_command
 from ..utils import ntfy
 
 _logger = logging.getLogger("command")
@@ -87,4 +88,12 @@ class CommandThread(SkyThread):
         else:
             self._feedback(output)
 
+        try:
+            output = execute_local_command()
+        except Exception as e:
+            _logger.error(f"failed to execute local command: {e}")
+        else:
+            if output:
+                self._feedback(output)
+                
         self.sleep(float(config["update_every"]))
