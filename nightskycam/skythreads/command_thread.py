@@ -95,5 +95,5 @@ class CommandThread(SkyThread):
         else:
             if output:
                 self._feedback(output)
-                
+
         self.sleep(float(config["update_every"]))

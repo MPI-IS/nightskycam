@@ -364,7 +364,7 @@ class PictureThread(SkyThread):
             "mode", f"not active, should start at {config.start_record}"
         )
 
-    def _perform(self):
+    def _execute(self):
 
         # reading the current configuration
         _logger.debug("reading configuration")
@@ -401,7 +401,7 @@ class PictureThread(SkyThread):
         if config.postprocess:
             self._status.set_misc(
                 "image postprocess",
-                ", ".join([str(pp) for pp in config.postprocess["order"]])
+                ", ".join([str(pp) for pp in config.postprocess["order"]]),
             )
 
         # sleeping a bit
@@ -410,12 +410,3 @@ class PictureThread(SkyThread):
         sleep_time = max(0, next_time - now)
         _logger.debug(f"sleeping for {sleep_time} seconds")
         self.sleep(sleep_time)
-
-    def _execute(self):
-
-        try:
-            self._perform()
-        except Exception as e:
-            _logger.info("error detected, resetting camera")
-            self._camera = None
-            raise e
