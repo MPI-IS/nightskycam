@@ -55,11 +55,14 @@ class Camera(object):
         d: typing.Dict[str, str] = {}
         return d
 
+    def connected(self) -> bool:
+        raise NotImplementedError()
+    
     def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def inactive_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def upon_active(self, config: typing.Dict[str, typing.Any]) -> None:
         pass
@@ -72,6 +75,9 @@ class DummyCamera(Camera):
     def __init__(self) -> None:
         super().__init__()
 
+    def connected(self) -> bool:
+        return True
+        
     def picture(self) -> typing.Tuple[Image, str]:
         return DummyImage(), "dummy_image"
 
@@ -270,7 +276,6 @@ class PictureThread(SkyThread):
     def _check_config(
         cls, config_getter: ConfigurationGetter, class_name: str
     ) -> typing.Optional[str]:
-
         config = config_getter.get(class_name)
         PictureThreadConfiguration.from_dict(config)
         return None

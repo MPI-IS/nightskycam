@@ -34,14 +34,21 @@ class AsiImage(Image):
     def set_data(self, data: npt.NDArray) -> None:
         self._data = data
 
-
-class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
+class AsiZwoCamera(Camera):
     def __init__(self, index: int):
-        super().__init__(index)
+        self._index = index
+        self._camera = camera_zwo_asi.Camera(index)
 
+    def connected(self) -> bool:
+        try:
+            self._camera.get_controls()
+        except Exception as e:
+            return False
+        return True
+        
     def _configure(self, config: typing.Mapping[str, typing.Any]) -> None:
-        self.configure_from_toml(config)
-
+        self._camera.configure_from_toml(config)
+        
     def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         self._configure(config)
         if config["controllables"]["CoolerOn"] > 0:
@@ -50,16 +57,16 @@ class AsiZwoCamera(camera_zwo_asi.Camera, Camera):
     def inactive_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         config["controllables"]["CoolerOn"] = 0
         self._configure(config)
-        super().set_control("CoolerOn", 0)
+        self._camera.set_control("CoolerOn", 0)
 
     def picture(self) -> typing.Tuple[Image, str]:
-        nimage = self.capture()
-        meta = self.to_toml(specify_auto=False, non_writable=True)
+        nimage = self._camera.capture()
+        meta = self._camera.to_toml(specify_auto=False, non_writable=True)
         image = AsiImage(nimage.get_image())
         return image, meta
 
     def get_misc(self) -> typing.Dict[str, str]:
-        controls = self.get_controls()
+        controls = self._camera.get_controls()
         return {
             "temperature": controls["Temperature"].value / 10.0,
             "cooler on": controls["CoolerOn"].value,
@@ -85,14 +92,5 @@ class AsiZwoThread(PictureThread):
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
-
         cls._check_config(config_getter, "AsiZwoThread")
-
-        config = config_getter.get("AsiZwoThread")
-        try:
-            cam = AsiZwoCamera(0)
-            cam._configure(config)
-        except Exception as e:
-            return f"error with AsiZwoThread configuration: {e}"
-
         return None

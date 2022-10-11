@@ -117,8 +117,8 @@ def run(main_control: MainControl, config_getter: ConfigurationGetter) -> None:
             try:
                 time.sleep(period)
             except KeyboardInterrupt:
-                _ntfy(config_getter, "nightskycam requested to stop", ["zap"])
                 _logger.info("nightskycam requested to stop")
+                _ntfy(config_getter, "nightskycam requested to stop", ["zap"])
                 break
 
     _logger.info("exit")

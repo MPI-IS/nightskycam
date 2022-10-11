@@ -192,20 +192,19 @@ def local_config_cleanup(folder: Path, main_file: str) -> None:
     deleted the other, and setup 'nightskycam.toml' to be a symlink to this
     file.
     """
-    with Locks.get_lock("configuration"):
-        local_files = list_local_config_files(folder)
-        best_file = best_config_file(local_files)
-        main_path = folder / main_file
-        try:
-            main_path.unlink()
-        except Exception:
-            pass
-        main_path.symlink_to(best_file)
-        to_delete = [
-            folder / filename for filename in local_files if not filename == best_file
-        ]
-        for path in to_delete:
-            path.unlink()
+    local_files = list_local_config_files(folder)
+    best_file = best_config_file(local_files)
+    main_path = folder / main_file
+    try:
+        main_path.unlink()
+    except Exception:
+        pass
+    main_path.symlink_to(best_file)
+    to_delete = [
+        folder / filename for filename in local_files if not filename == best_file
+    ]
+    for path in to_delete:
+        path.unlink()
 
 
 def current_config_file() -> str:
