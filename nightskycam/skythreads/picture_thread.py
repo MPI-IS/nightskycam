@@ -100,8 +100,14 @@ def _is_active(
     if end_record is None:
         return True
     time_now = datetime.time(hour=now.hour, minute=now.minute)
-    if time_now > start_record or time_now < end_record:
-        return True
+    if end_record < start_record:
+        # end record: next day
+        if time_now > start_record or time_now < end_record:
+            return True
+    else:
+        # end record: same day
+        if time_now > start_record and time_now < end_record:
+            return True
     return False
 
 
