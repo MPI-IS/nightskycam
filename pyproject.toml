@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nightskycam"
-version = "1.1.26"
+version = "1.1.27"
 description = "taking pictures at night"
 authors = [
 	"Vincent Berenz <vberenz@tuebingen.mpg.de>",
@@ -31,6 +31,7 @@ nightskycam-deploy-tests = 'nightskycam.main:deploy_tests'
 nightskycam-run = 'nightskycam.main:run'
 nightskycam-ftp-test-server = "nightskycam.main:ftp_test_server"
 nightskycam-http-test-server = "nightskycam.main:http_test_server"
+nightskycam-display = "nightskycam.main:display"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

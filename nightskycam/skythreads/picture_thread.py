@@ -57,7 +57,7 @@ class Camera(object):
 
     def connected(self) -> bool:
         raise NotImplementedError()
-    
+
     def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         raise NotImplementedError()
 
@@ -77,7 +77,7 @@ class DummyCamera(Camera):
 
     def connected(self) -> bool:
         return True
-        
+
     def picture(self) -> typing.Tuple[Image, str]:
         return DummyImage(), "dummy_image"
 
@@ -147,31 +147,37 @@ def _save(data: typing.Union[Image, str], path: Path) -> None:
 def _save_data(
     tmp_dir: Path,
     final_dir: Path,
-    latest_dir: Path,
+    latest_dir: typing.Optional[Path],
     image: Image,
     metadata: str,
     filename: str,
     file_format: str,
-) -> None:
+) -> typing.Tuple[Path, Path]:
 
     # making sure the required folders exist
-    for folder in (tmp_dir, final_dir, latest_dir):
+    for folder in (tmp_dir, final_dir):
         folder.mkdir(parents=True, exist_ok=True)
+    if latest_dir:
+        latest_dir.mkdir(parents=True, exist_ok=True)
 
     # saving the image in tmp_dir, then copy it to
     # final_dir and latest_dir.
     image_tmp_path = tmp_dir / f"{filename}.{file_format}"
     image_final_path = final_dir / f"{filename}.{file_format}"
-    image_latest_path = latest_dir / f"latest.{file_format}"
+    if latest_dir:
+        image_latest_path = latest_dir / f"latest.{file_format}"
     metadata_tmp_path = tmp_dir / f"{filename}.toml"
     metadata_final_path = final_dir / f"{filename}.toml"
-    metadata_latest_path = latest_dir / "latest.txt"
+    if latest_dir:
+        metadata_latest_path = latest_dir / "latest.txt"
     _save(image, image_tmp_path)
     _save(metadata, metadata_tmp_path)
-    shutil.copy(image_tmp_path, image_latest_path)
-    shutil.copy(metadata_tmp_path, metadata_latest_path)
+    if latest_dir:
+        shutil.copy(image_tmp_path, image_latest_path)
+        shutil.copy(metadata_tmp_path, metadata_latest_path)
     image_tmp_path.rename(image_final_path)
     metadata_tmp_path.rename(metadata_final_path)
+    return image_final_path, metadata_final_path
 
 
 class PictureThreadConfiguration:
@@ -317,10 +323,14 @@ class PictureThread(SkyThread):
                 config.file_format,
             )
 
-    def _step_active(self, config: PictureThreadConfiguration) -> None:
+    def _step_active(
+        self,
+        config: PictureThreadConfiguration,
+        destination_folder: typing.Optional[Path] = None,
+    ) -> typing.Optional[typing.Tuple[Path, Path]]:
 
         if self._camera is None:
-            return
+            return None
 
         if config.end_record:
             self._status.set_misc("mode", f"active, will stop at {config.end_record}")
@@ -353,19 +363,36 @@ class PictureThread(SkyThread):
         metadata = f"{gnrl_metadata}\n{image_metadata}\n{postprocess_metadata}"
 
         # saving the image and related metadata
-        _logger.debug(f"saving {filename}")
-        _save_data(
-            config.tmp_dir,
-            config.final_dir,
-            config.latest_dir,
-            image,
-            metadata,
-            filename,
-            config.file_format,
-        )
+        if destination_folder is None:
+            _logger.debug(f"saving {filename}")
+            image_path, meta_path = _save_data(
+                config.tmp_dir,
+                config.final_dir,
+                config.latest_dir,
+                image,
+                metadata,
+                filename,
+                config.file_format,
+            )
+        else:
+            _logger.debug(f"saving {filename} to {destination_folder}")
+            if not destination_folder.is_dir():
+                raise FileNotFoundError(
+                    f"can not save image in {destination_folder}: folder not found"
+                )
+            image_path, meta_path = _save_data(
+                destination_folder,
+                destination_folder,
+                None,
+                image,
+                metadata,
+                filename,
+                config.file_format,
+            )
 
         self._nb_pictures += 1
         self._status.set_misc("number pictures taken", str(self._nb_pictures))
+        return image_path, meta_path
 
     def _step_inactive(self, config: PictureThreadConfiguration):
         if self._camera is None:
@@ -374,6 +401,14 @@ class PictureThread(SkyThread):
         self._status.set_misc(
             "mode", f"not active, should start at {config.start_record}"
         )
+
+    def get_configuration(self) -> PictureThreadConfiguration:
+        gnrl_config = self._config_getter.get(self._class_name)
+        config = typing.cast(
+            PictureThreadConfiguration,
+            PictureThreadConfiguration.from_dict(gnrl_config),
+        )
+        return config
 
     def _execute(self):
 

@@ -64,14 +64,13 @@ class RunningThreads:
     def stop(cls):
         _logger.info("stopping")
         stop_threads = {
-            t.__class__.__name__:threading.Thread(target=t.stop) for t in cls.skythreads
+            t.__class__.__name__: threading.Thread(target=t.stop)
+            for t in cls.skythreads
         }
-        for name,st in stop_threads.items():
-            _logger.info(
-                f"sending stop request to skythread {name}"
-            )
+        for name, st in stop_threads.items():
+            _logger.info(f"sending stop request to skythread {name}")
             st.start()
-        for name,st in stop_threads.items():
+        for name, st in stop_threads.items():
             st.join()
             _logger.info(f"skythread {name} stopped")
         cls.skythreads = []

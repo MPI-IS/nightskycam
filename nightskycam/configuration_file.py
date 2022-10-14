@@ -2,7 +2,6 @@ import logging
 import importlib
 import typing
 import toml
-from .locks import Locks
 from pathlib import Path
 from .skythread import SkyThread
 from .types import GlobalConfiguration

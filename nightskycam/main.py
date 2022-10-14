@@ -6,12 +6,14 @@ import typing
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from .configuration_file import configuration_file_folder
-from .configuration_getter import DynamicConfigurationGetter
+from .configuration_file import configuration_file_folder, get_skythreads
+from .configuration_getter import DynamicConfigurationGetter, FixedConfigurationGetter
+from .skythreads import PictureThread
 from . import manager
 from .utils.ftp import FtpConfig, FtpServer
 from .utils.http import HttpServer
 from .utils.ntfy import NtfyHandler
+from .utils import images
 
 _logger = logging.getLogger("main")
 
@@ -200,3 +202,43 @@ def run():
         exit(1)
 
     exit(0)
+
+
+def display():
+
+    current_dir = Path(os.getcwd())
+
+    main_dir = configuration_file_folder()
+    if not main_dir.is_dir():
+        raise FileNotFoundError(
+            f"failed to start nightskycam, main folder {main_dir} not found"
+        )
+
+    os.chdir(main_dir)
+
+    config_file = main_dir / "nightskycam_config.toml"
+    if not config_file.is_file():
+        raise FileNotFoundError(
+            f"failed to start nightskycam, main config file {config_file} not found"
+        )
+
+    config_getter = FixedConfigurationGetter(config_file)
+
+    skythreads = get_skythreads(config_getter.get_global())
+
+    picture_threads = [st for st in skythreads if issubclass(st,PictureThread)]
+
+    for pt in picture_threads:
+
+        instance = pt(config_getter)
+        gnrl_config = config_getter.get(pt.__name__)
+        instance._camera = instance.get_camera(gnrl_config)
+        config = instance.get_configuration()
+        instance._camera.active_configure(gnrl_config)
+        instance._camera.upon_active(gnrl_config)
+        image_path, metapath = instance._step_active(config, current_dir)
+        print()
+        meta = metapath.read_text()
+        print()
+        print("saved image: {image_path}")
+        print()
