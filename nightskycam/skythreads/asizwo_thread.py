@@ -1,10 +1,10 @@
-import cv2
 import typing
 import nptyping as npt
 import camera_zwo_asi
 from pathlib import Path
 from .picture_thread import PictureThread, Camera, Image
 from ..configuration_getter import ConfigurationGetter
+from ..utils import images
 
 
 class AsiImage(Image):
@@ -14,25 +14,17 @@ class AsiImage(Image):
     def save(self, filepath: typing.Union[Path, str]) -> None:
         if isinstance(filepath, str):
             filepath = Path(filepath)
-        folder = filepath.parent
-        if not folder.exists():
-            raise FileNotFoundError(
-                f"fails to save image to {folder}: " "folder not found"
-            )
-        cv2.imwrite(str(filepath), self._data)
-        # image = PILImage.fromarray(self._data)
-        # image.save(filepath)
+        images.save(filepath, self._data)
 
     def display(self, label: str = "nightskycam") -> None:
-        cv2.imshow(label, self._data)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        images.display(label, self._data)
 
     def get_data(self) -> npt.NDArray:
         return self._data
 
     def set_data(self, data: npt.NDArray) -> None:
         self._data = data
+
 
 class AsiZwoCamera(Camera):
     def __init__(self, index: int):
@@ -42,13 +34,13 @@ class AsiZwoCamera(Camera):
     def connected(self) -> bool:
         try:
             self._camera.get_controls()
-        except Exception as e:
+        except Exception:
             return False
         return True
-        
+
     def _configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         self._camera.configure_from_toml(config)
-        
+
     def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         self._configure(config)
         if config["controllables"]["CoolerOn"] > 0:

@@ -57,7 +57,7 @@ class Camera(object):
 
     def connected(self) -> bool:
         raise NotImplementedError()
-    
+
     def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         raise NotImplementedError()
 
@@ -77,7 +77,7 @@ class DummyCamera(Camera):
 
     def connected(self) -> bool:
         return True
-        
+
     def picture(self) -> typing.Tuple[Image, str]:
         return DummyImage(), "dummy_image"
 

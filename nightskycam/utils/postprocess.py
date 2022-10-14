@@ -74,10 +74,9 @@ def cv2_resize(
     def _resize(
         arr: npt.NDArray, new_shape: typing.Tuple[int, int], interpolation
     ) -> npt.NDArray:
-        r = np.asarray(
-            cv2.resize(arr, new_shape, interpolation=interpolation)
-        ).transpose()
-        return np.flip(r, axis=1)
+        return np.asarray(
+            cv2.resize(arr, (new_shape[1], new_shape[0]), interpolation=interpolation)
+        )
 
     new_shape = (
         int(image.shape[0] / ratio),
