@@ -11,6 +11,7 @@ from ..types import Configuration
 from ..skythread import SkyThread
 from ..metadata import Meta
 from ..utils import postprocess
+from ..utils import images
 
 _logger = logging.getLogger("picture")
 
@@ -19,7 +20,7 @@ class Image:
     def __init__(self) -> None:
         pass
 
-    def save(self, path: Path) -> None:
+    def save(self, path: Path, cv2_all_formats: images.CV2ALLFormats) -> None:
         raise NotImplementedError()
 
     def display(self, label: str = "") -> None:
@@ -33,7 +34,7 @@ class Image:
 
 
 class DummyImage(Image):
-    def save(self, path: Path) -> None:
+    def save(self, path: Path, cv2_all_formats = images.CV2ALLFormats) -> None:
         with open(path, "w+") as f:
             f.write("dummy image")
 
@@ -136,12 +137,12 @@ def _take_picture(camera) -> typing.Optional[typing.Tuple[Image, str]]:
     return image, metadata
 
 
-def _save(data: typing.Union[Image, str], path: Path) -> None:
+def _save(data: typing.Union[Image, str], path: Path, cv2_all_formats: images.CV2AllFormats) -> None:
     if isinstance(data, str):
         with open(path, "w+") as f:
             f.write(data)
     else:
-        data.save(path)
+        data.save(path, cv2_all_formats)
 
 
 def _save_data(
@@ -152,6 +153,7 @@ def _save_data(
     metadata: str,
     filename: str,
     file_format: str,
+    cv2_all_formats: images.CV2AllFormats
 ) -> typing.Tuple[Path, Path]:
 
     # making sure the required folders exist
@@ -170,8 +172,8 @@ def _save_data(
     metadata_final_path = final_dir / f"{filename}.toml"
     if latest_dir:
         metadata_latest_path = latest_dir / "latest.txt"
-    _save(image, image_tmp_path)
-    _save(metadata, metadata_tmp_path)
+    _save(image, image_tmp_path, cv2_all_formats)
+    _save(metadata, metadata_tmp_path, cv2_all_formats)
     if latest_dir:
         shutil.copy(image_tmp_path, image_latest_path)
         shutil.copy(metadata_tmp_path, metadata_latest_path)
@@ -321,6 +323,7 @@ class PictureThread(SkyThread):
                 metadata + "\n" + image_metadata + "\n" + postprocess_metadata,
                 filename,
                 config.file_format,
+                gnrl_config["fileformat"]
             )
 
     def _step_active(
@@ -373,6 +376,7 @@ class PictureThread(SkyThread):
                 metadata,
                 filename,
                 config.file_format,
+                gnrl_config["fileformat"]
             )
         else:
             _logger.debug(f"saving {filename} to {destination_folder}")
@@ -388,6 +392,7 @@ class PictureThread(SkyThread):
                 metadata,
                 filename,
                 config.file_format,
+                gnrl_config["fileformat"]
             )
 
         self._nb_pictures += 1

@@ -11,10 +11,10 @@ class AsiImage(Image):
     def __init__(self, data: npt.NDArray) -> None:
         self._data = data
 
-    def save(self, filepath: typing.Union[Path, str]) -> None:
+    def save(self, filepath: typing.Union[Path, str], cv2_all_formats = images.CV2AllFormats) -> None:
         if isinstance(filepath, str):
             filepath = Path(filepath)
-        images.save(filepath, self._data)
+        images.save(filepath, self._data, cv2_all_formats)
 
     def display(self, label: str = "nightskycam") -> None:
         images.display(label, self._data)
