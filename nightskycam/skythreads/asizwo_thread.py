@@ -7,25 +7,6 @@ from ..configuration_getter import ConfigurationGetter
 from ..utils import images
 
 
-class AsiImage(Image):
-    def __init__(self, data: npt.NDArray) -> None:
-        self._data = data
-
-    def save(self, filepath: typing.Union[Path, str], cv2_all_formats = images.CV2AllFormats) -> None:
-        if isinstance(filepath, str):
-            filepath = Path(filepath)
-        images.save(filepath, self._data, cv2_all_formats)
-
-    def display(self, label: str = "nightskycam") -> None:
-        images.display(label, self._data)
-
-    def get_data(self) -> npt.NDArray:
-        return self._data
-
-    def set_data(self, data: npt.NDArray) -> None:
-        self._data = data
-
-
 class AsiZwoCamera(Camera):
     def __init__(self, index: int):
         self._index = index

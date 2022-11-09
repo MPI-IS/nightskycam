@@ -15,41 +15,99 @@ from ..utils import images
 
 _logger = logging.getLogger("picture")
 
+MetaData = typing.Mapping[str,typing.Any]
 
 class Image:
-    def __init__(self) -> None:
-        pass
 
-    def save(self, path: Path, cv2_all_formats: images.CV2ALLFormats) -> None:
-        raise NotImplementedError()
+    __slots__ = (
+        "filename", "current_dir", "fileformat",
+        "data", "metadata", "cv2_all_formats"
+    )
 
-    def display(self, label: str = "") -> None:
-        raise NotImplementedError()
+    def __init__(self, data: npt.ArrayList, metadata: Metadata)->None:
+        self.filename: typing.Optional[str] = None
+        self.current_dir: typing.Optional[Path] = None
+        self.fileformat: typing.Optional[str] = None
+        self.data: np.ArrayLike = data
+        self.metadata: Metadata = metadata
+        
 
-    def get_data(self) -> npt.NDArray:
-        raise NotImplementedError()
+    def save(
+            target_dir: Path,
+            filename: typing.Optional[str] = None,
+            fileformat: str = "npy",
+            cv2_all_formats: CV2AllFormats = {}
+    )->None:
 
-    def set_data(self, image: npt.NDArray) -> None:
-        raise NotImplementedError()
+        if not target_dir.is_dir():
+            raise FileNotFoundError(
+                f"can not save image in {target_dir}: "
+                "directory not found"
+            )
 
+        if filename is None and self.filename is None:
+            raise ValueError(
+                f"can not save image to {target_dir}: "
+                "filename is not specified"
+            )
 
-class DummyImage(Image):
-    def save(self, path: Path, cv2_all_formats = images.CV2ALLFormats) -> None:
-        with open(path, "w+") as f:
-            f.write("dummy image")
+        if filename is not None:
+            self.filename = filename
 
-    def display(cls, label: str = "") -> None:
-        print("pretend display of dummy image")
+        self.fileformat = fileformat
 
-    def get_data(self) -> npt.NDArray:
-        return np.array([0])
+        data_file = target_dir / f"{self.filename}.{self.fileformat}"
+        metadata_file = target_dir / f"{self.filename}.toml"
+        
+        if self.fileformat == "npy":
+            np.save(data_file, self.data)
+        else:
+            images.save(data_file, self.data, cv2_all_formats)
 
-    def set_data(self, image: npt.NDArray) -> None:
-        pass
+        with open(metadata_file,"w") as f:
+            toml.dump(self.metadata,f)
+        
+        
+    def move(self, destination_dir: Path)->None:
 
+        for attr in self.__slots__:
+            if getattr(self,attr) is None:
+                raise ValueError(
+                    f"failed to move image to {destination_dir}: "
+                    f"attribute {attr} is None"
+                )
+
+        if not destination_dir.is_dir():
+            raise FileNotFoundError(
+                f"can not move image {self.filename} to {destination_dir}: "
+                "directory not found"
+            )
+        
+        data_file = self.current_dir / f"{self.filename}.{self.fileformat}"
+        meta_file = self.current_dir / f"{self.filename}.toml"
+
+        if not data_file.is_file():
+            raise FileNotFoundError(
+                f"can not move image f{data_file} to {destination_dir}: "
+                "file not found"
+            )
+
+        if not meta_file.is_file():
+            raise FileNotFoundError(
+                f"can not move image f{meta_file} to {destination_dir}: "
+                "file not found"
+            )
+
+        dest_data_file = destination_dir / f"{self.filename}.{self.fileformat}"
+        dest_meta_file = destination_dir / f"{self.filename}.toml"
+        
+        data_file.rename(dest_data_file)
+        meta_file.rename(dest_meta_file)
+
+        
 
 class Camera(object):
-    def picture(self) -> typing.Tuple[Image, str]:
+    def picture(self) -> typing.Tuple[npt.ArrayLike, Metadata]:
         raise NotImplementedError()
 
     def get_misc(self) -> typing.Dict[str, str]:
