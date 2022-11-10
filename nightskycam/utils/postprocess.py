@@ -106,20 +106,20 @@ def _get_kwargs(f: typing.Callable) -> typing.List[str]:
 
 def apply(
     image: npt.NDArray, postconfig: Configuration, dry_run: bool = False
-) -> typing.Tuple[npt.NDArray, str]:
+) -> npt.NDArray:
 
-    if "order" not in postconfig.keys():
-        _logger.info("no 'order' key in the 'postprocess' configuration, skipping")
+    if "steps" not in postconfig.keys():
+        _logger.info("no 'steps' key in the 'postprocess' configuration, skipping")
         return image, toml.dumps({"postprocess": None})
 
-    order = postconfig["order"]
+    steps = postconfig["steps"]
 
-    if not order:
-        _logger.info("'order' of 'postprocess' is empty: skipping")
+    if not steps:
+        _logger.info("'steps' of 'postprocess' is empty: skipping")
 
     supported_fn = {f.__name__: f for f in _list_functions()}
 
-    for fn in order:
+    for fn in steps:
 
         if fn not in supported_fn:
             valid = ", ".join(supported_fn.keys())
@@ -154,4 +154,4 @@ def apply(
                     f"arguments '{kwargs}': {e}"
                 )
 
-    return image, toml.dumps(postconfig)
+    return image

@@ -26,12 +26,24 @@ class SkyThread:
     def get_status(self):
         return self._status
 
-    def sleep(self, duration: float, precision: float = 0.02) -> None:
+    def sleep(
+        self,
+        duration: float,
+        precision: float = 0.02,
+        interrupt_on_config_change: bool = False,
+    ) -> bool:
+        st_mtime: typing.Optional[float] = self._config_getter.get_st_mtime()
         start = time.time()
         while time.time() - start < duration:
             if not self._running:
                 break
+            if (
+                interrupt_on_config_change
+                and self._config_getter.get_st_mtime() != st_mtime
+            ):
+                return True
             time.sleep(precision)
+        return False
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:

@@ -226,7 +226,7 @@ def display():
 
     skythreads = get_skythreads(config_getter.get_global())
 
-    picture_threads = [st for st in skythreads if issubclass(st,PictureThread)]
+    picture_threads = [st for st in skythreads if issubclass(st, PictureThread)]
 
     for pt in picture_threads:
 
