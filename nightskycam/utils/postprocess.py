@@ -110,7 +110,7 @@ def apply(
 
     if "steps" not in postconfig.keys():
         _logger.info("no 'steps' key in the 'postprocess' configuration, skipping")
-        return image, toml.dumps({"postprocess": None})
+        return image
 
     steps = postconfig["steps"]
 

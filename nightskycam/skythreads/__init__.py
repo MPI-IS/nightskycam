@@ -10,3 +10,4 @@ from .dummy_thread import DummyThread
 from .config_thread import ConfigThread
 from .command_thread import CommandThread
 from .webdav_thread import WebdavThread
+from .postprocess_thread import PostprocessThread

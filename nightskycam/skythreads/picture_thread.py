@@ -11,7 +11,7 @@ from ..types import Configuration
 from ..skythread import SkyThread
 from ..metadata import Meta
 from ..utils import postprocess
-from ..cameras import images
+from ..cameras import images, camera
 
 _logger = logging.getLogger("picture")
 
@@ -63,7 +63,7 @@ class PictureThreadConfiguration:
 
     __slots__ = (
         "final_dir",
-        "latest_dir",
+        "target_dir",
         "picture_every",
         "start_record",
         "end_record",
@@ -71,7 +71,7 @@ class PictureThreadConfiguration:
 
     def __init__(self):
         self.final_dir: Path = Path("/tmp")
-        self.latest_dir: Path = Path("/tmp")
+        self.target_dir: Path = Path("/tmp")
         self.picture_every: int = -1
         self.start_record: datetime.time = datetime.time(hour=0, minute=0)
         self.end_record: datetime.time = datetime.time(hour=0, minute=0)
@@ -100,7 +100,7 @@ class PictureThreadConfiguration:
                 f"({instance.picture_every}) to an int: {e}"
             )
 
-        paths = ("final_dir", "latest_dir")
+        paths = ("final_dir", "target_dir")
         for path in paths:
             value_ = getattr(instance, path)
             value = Path(value_)
@@ -139,13 +139,13 @@ class PictureThread(SkyThread):
         else:
             self._class_name = full_class_name[last_point + 1 :]
         self._nb_pictures = 0
-        self._camera: typing.Optional[Camera] = None
+        self._camera: typing.Optional[camera.Camera] = None
 
     @classmethod
     def get_camera(
         cls,
         config: typing.Mapping[str, typing.Any],
-    ) -> Camera:
+    ) -> camera.Camera:
         raise NotImplementedError()
 
     @classmethod

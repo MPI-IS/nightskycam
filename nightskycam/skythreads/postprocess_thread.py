@@ -1,30 +1,26 @@
+import toml
+import cv2
 import time
 import typing
 import logging
+import numpy as np
+import multiprocessing
+from multiprocessing.synchronize import Lock as LockBase
+from pathlib import Path
+from ..locks import Locks
+from ..cameras import images
 from ..types import Configuration
-from ..utils.http import HttpServer
+from ..utils import postprocess
 from ..skythread import SkyThread
 from ..configuration_getter import ConfigurationGetter
 from ..configuration_file import configuration_file_folder
+from ..cameras.images import CV2Format, CV2Params
+
 
 logger = logging.getLogger("postprocess")
 
-CV2Format = typing.Dict[str, int]
-"""
-A dictionary providing values of opencv2 save method 'params' key word argument,
-e.g. {"IMWRITE_JPEG_QUALITY":95, "IMWRITE_JPEG_PROGRESSIVE":0}
-"""
-
-CV2PARAMS = typing.List[typing.Tuple[int, int]]
-"""
-A configuration array for the 'params' key word argument 
-of the opencv2 save method,
-e.g [(cv2.IMWRITE_JPEG_QUALITY,95),(IMWRITE_JPEG_PROGRESSIVE,0)]
-"""
-
-
-def _get_cv2params(cv2_format: CV2Format) -> CV2PARAMS:
-    r: CV2PARAMS = []
+def _get_cv2params(cv2_format: CV2Format) -> CV2Params:
+    r: CV2Params = []
     for name, value in cv2_format.items():
         try:
             cv2_attr = getattr(cv2, name)
@@ -33,7 +29,7 @@ def _get_cv2params(cv2_format: CV2Format) -> CV2PARAMS:
                 "file format configuration error: "
                 f"{name} is not a supported attribute of opencv2"
             )
-        r.append(cv2_attr, int(value))
+        r.append((cv2_attr, int(value)))
     return r
 
 
@@ -45,15 +41,15 @@ def _run_postprocess(
     # reading the configuration
     src_dir = Path(config["src_dir"])
     dest_dir = Path(config["dest_dir"])
-    fileformat = config["fileformat"]
+    fileformat = str(config["fileformat"])
     cv2params = _get_cv2params(config[fileformat])
 
-    # the raw image and related toml metadata
+    # the raw image and related toml metadata files
     data_file = src_dir / f"{filename}.npy"
     meta_file = src_dir / f"{filename}.toml"
 
     # reading the files
-    data = np.load(datafile)
+    data = np.load(data_file)
     meta = toml.load(meta_file)
 
     # applying the postprocesses
@@ -61,13 +57,13 @@ def _run_postprocess(
 
     # updating the metadata
     postmeta: Configuration = {}
-    for step in postconfig["steps"]:
-        postmeta[step] = postconfig[step]
+    for step in config["steps"]:
+        postmeta[str(step)] = config[step]
     meta["postprocess"] = postmeta
 
     # saving the image
-    image: images.Image(postdata, postmeta, filename)
-    image.save(Path(config["dest_dir"]), fileformat, cv2params)
+    image = images.Image(postdata, postmeta, filename)
+    image.save(Path(config["dest_dir"]), fileformat=fileformat, cv2params=cv2params)
 
 
 def _run_all_postprocesses(config: Configuration) -> typing.Tuple[int, int]:
@@ -77,7 +73,7 @@ def _run_all_postprocesses(config: Configuration) -> typing.Tuple[int, int]:
     batch_size = int(config["batch_size"])
 
     # all dumped image numpy array
-    data_files = src_dir.glob("*.npy")
+    data_files = list(src_dir.glob("*.npy"))
 
     # number of files that are waiting for postprocess
     nb_files = len(data_files)
@@ -90,11 +86,11 @@ def _run_all_postprocesses(config: Configuration) -> typing.Tuple[int, int]:
         # but only if there is already a related
         # metadata file
         metafile = src_dir / f"{df.stem}.toml"
-        if metafile.isfile():
+        if metafile.is_file():
             # applying the postprocess and
             # writing the files in dest_dir
             _run_postprocess(
-                df.stem, src_dir, tmp_dir, dest_dir, config, cv2_all_formats
+                df.stem, config
             )
 
     # returning number of files processed and number of file remaining
@@ -104,22 +100,28 @@ def _run_all_postprocesses(config: Configuration) -> typing.Tuple[int, int]:
 
 
 class _Process:
-    def __init__(self, config: Configuration, sleep: float = 0.2):
+    def __init__(
+        self,
+        config: ConfigurationGetter,
+        lock: LockBase,
+        sleep: float = 0.2,
+    ) -> None:
         self._config = config
-        self._running = running
-        self._running: multiprocessing.Value("i", False)
-        self._processed: multiprocessing.Value("i", 0)
-        self._remaining: multiprocessing.Value("i", 0)
+        self._lock = lock
+        self._running = multiprocessing.Value("i", False)
+        self._processed= multiprocessing.Value("i", 0)
+        self._remaining= multiprocessing.Value("i", 0)
         self._sleep = sleep
-        self._process = typing.Optional[multiprocessing.Process] = None
+        self._process: typing.Optional[multiprocessing.Process] = None
 
     def _run(self) -> None:
         self._running.value = True
         while self._running.value:
-            processed, remaining = _run_all_multiprocess(self._config)
+            config = self._config.get("PostprocessThread")
+            processed, remaining = _run_all_postprocesses(config)
             self._processed.value += processed
             self._remaining.value = remaining
-            time.sleep(self.sleep)
+            time.sleep(self._sleep)
 
     def get_stats(self) -> typing.Tuple[int, int]:
         return self._processed.value, self._remaining.value
@@ -138,7 +140,7 @@ class _Process:
         self.start()
         return self
 
-    def __exit__(self, _, __, __):
+    def __exit__(self, _, __, ___):
         self.stop()
 
 
@@ -232,16 +234,16 @@ class PostprocessThread(SkyThread):
         filename = "deploy_test"
         testfile = Path(config["src_dir"]) / f"{filename}.npy"
         metafile = Path(config["src_dir"]) / f"{filename}.toml"
-        data = np.zeros(200, 400)
+        data = np.zeros((200, 400))
         np.save(testfile, data)
         metadata = {"type": "deploy test file"}
         with open(metafile, "w") as f:
-            toml.dump(metadata)
+            toml.dump(metadata,f)
 
         # starting the postprocess process
         time_start = time.time()
         timeout = 5.0
-        with _Process(config) as p:
+        with _Process(self._config_getter, Locks.get_config_lock()) as p:
             while True:
                 treated, _ = p.get_stats()
                 if treated >= 1:
@@ -275,16 +277,12 @@ class PostprocessThread(SkyThread):
 
     def _execute(self) -> None:
 
-        # to update :
-        # the configuration should be read in the process !
-        # -> the config of the postprocess may change !
-        
         if self._process is None:
-            config = self._config_getter.get("PostprocessThread")
-            self._process = _Process(config)
+            self._process = _Process(self._config_getter,Locks.get_config_lock())
             self._process.start()
+            config = self._config_getter.get("PostprocessThread")
             self._status.set_misc("file format", str(config["fileformat"]))
-            self._status.set_misc("types", ", ".join([str(s) for s in config["steps"]]))
+            self._status.set_misc("steps", ", ".join([str(s) for s in config["steps"]]))
 
         else:
             treated, remaining = self._process.get_stats()
