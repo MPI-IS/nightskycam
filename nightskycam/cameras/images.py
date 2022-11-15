@@ -1,26 +1,11 @@
 import toml
 import typing
 import tempfile
+import cv2
 import numpy as np
 import numpy.typing as npt
 from pathlib import Path
-import cv2
-
-CV2Format = typing.Dict[str, int]
-"""
-A dictionary providing values of opencv2 save method 'params' key word argument,
-e.g. {"IMWRITE_JPEG_QUALITY":95, "IMWRITE_JPEG_PROGRESSIVE":0}
-"""
-
-CV2Params = typing.List[typing.Tuple[int, int]]
-"""
-A configuration array for the 'params' key word argument 
-of the opencv2 save method,
-e.g [(cv2.IMWRITE_JPEG_QUALITY,95),(IMWRITE_JPEG_PROGRESSIVE,0)]
-"""
-
-
-Metadata = typing.Dict[str, typing.Any]
+from .. import types
 
 
 def display(label: str, data: npt.NDArray) -> None:
@@ -33,20 +18,23 @@ class Image:
     def __init__(
         self,
         data: npt.ArrayLike,
-        metadata: Metadata,
+        metadata: types.Metadata,
         filename: typing.Optional[str] = None,
     ) -> None:
         self.filename: typing.Optional[str] = filename
         self.fileformat: typing.Optional[str] = None
         self.data: npt.ArrayLike = data
-        self.metadata: Metadata = metadata
+        self.metadata: types.Metadata = metadata
 
-    def add_meta(self, key: str, more_meta: Metadata) -> None:
+    def add_meta(self, key: str, more_meta: types.Metadata) -> None:
         self.metadata[key] = more_meta
 
     def save(
-            self, target_dir: Path, fileformat: str = "npy",
-            filename: typing.Optional[str]=None, cv2params: CV2Params = []
+        self,
+        target_dir: Path,
+        fileformat: str = "npy",
+        filename: typing.Optional[str] = None,
+        cv2params: types.CV2Params = [],
     ) -> None:
 
         if not target_dir.is_dir():

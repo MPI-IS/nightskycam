@@ -1,5 +1,6 @@
 import logging
 import typing
+import ntfy_lite
 from ..skythread import SkyThread
 from ..configuration_getter import ConfigurationGetter
 from ..types import Configuration
@@ -54,10 +55,10 @@ class CommandThread(SkyThread):
                 return ["hammer_and_wrench"]
             return ["tornado"]
 
-        def _ntfy_level(output: CommandResult) -> int:
+        def _ntfy_level(output: CommandResult) -> ntfy_lite.Priority:
             if output.return_code == 0:
-                return 3
-            return 4
+                return ntfy_lite.Priority.DEFAULT
+            return ntfy_lite.Priority.HIGH
 
         if output is None:
             _logger.debug("no new command file")

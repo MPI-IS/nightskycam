@@ -1,6 +1,7 @@
 import typing
 import logging
 import time
+import ntfy_lite
 from .skythread import SkyThread
 from .types import Configuration
 from .configuration_getter import ConfigurationGetter
@@ -85,7 +86,7 @@ def _ntfy(
     if ntfy_config is not None:
         url, topic = ntfy_config
         try:
-            ntfy.publish(url, topic, 3, title, "-", tags)
+            ntfy.publish(url, topic, ntfy_lite.Priority.DEFAULT, title, "-", tags)
         except Exception as e:
             _logger.error(str(e))
 

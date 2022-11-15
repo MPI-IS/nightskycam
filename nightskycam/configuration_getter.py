@@ -153,5 +153,8 @@ class DictConfigurationGetter(ConfigurationGetter):
     def __init__(self, d: GlobalConfiguration) -> None:
         self._d = d
 
+    def get_st_mtime(self) -> typing.Optional[float]:
+        return None
+        
     def get_global(self) -> GlobalConfiguration:
         return copy.deepcopy(self._d)

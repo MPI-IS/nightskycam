@@ -1,7 +1,7 @@
 import camera_zwo_asi
 import typing
 from .camera import Camera
-from .. import images
+from . import images
 
 
 class AsiZwoCamera(Camera):
@@ -32,7 +32,7 @@ class AsiZwoCamera(Camera):
     def picture(self) -> images.Image:
         nimage = self._camera.capture()
         meta = self._camera.to_dic(specify_auto=False, non_writable=True)
-        return nimage.get_image(), meta
+        return images.Image(nimage, meta)
 
     def get_misc(self) -> typing.Dict[str, str]:
         controls = self._camera.get_controls()

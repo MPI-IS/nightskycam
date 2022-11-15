@@ -1,6 +1,7 @@
 # flake8: noqa
 
 from .asizwo_thread import AsiZwoThread
+from .dummy_camera_thread import DummyCameraThread
 from .config_thread import ConfigThread
 from .ftp_thread import FtpThread
 from .http_thread import HttpThread

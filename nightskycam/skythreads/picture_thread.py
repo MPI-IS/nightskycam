@@ -62,7 +62,6 @@ def _next_picture_time(every: int):
 class PictureThreadConfiguration:
 
     __slots__ = (
-        "final_dir",
         "target_dir",
         "picture_every",
         "start_record",
@@ -70,7 +69,6 @@ class PictureThreadConfiguration:
     )
 
     def __init__(self):
-        self.final_dir: Path = Path("/tmp")
         self.target_dir: Path = Path("/tmp")
         self.picture_every: int = -1
         self.start_record: datetime.time = datetime.time(hour=0, minute=0)
@@ -100,7 +98,7 @@ class PictureThreadConfiguration:
                 f"({instance.picture_every}) to an int: {e}"
             )
 
-        paths = ("final_dir", "target_dir")
+        paths = ("target_dir",)
         for path in paths:
             value_ = getattr(instance, path)
             value = Path(value_)
@@ -206,9 +204,9 @@ class PictureThread(SkyThread):
         image: images.Image = self._camera.picture()
         image.filename = filename
         image.add_meta("general", gnrl_metadata)
-        _logger.debug(f"saving {filename} to {config.final_dir}")
+        _logger.debug(f"saving {filename} to {config.target_dir}")
         image.save(
-            config.final_dir,
+            config.target_dir,
             fileformat="npy",
         )
 

@@ -1,5 +1,5 @@
 import typing
-from .. import images
+from . import images
 
 
 class Camera(object):

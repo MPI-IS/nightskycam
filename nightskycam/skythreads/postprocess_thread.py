@@ -14,10 +14,11 @@ from ..utils import postprocess
 from ..skythread import SkyThread
 from ..configuration_getter import ConfigurationGetter
 from ..configuration_file import configuration_file_folder
-from ..cameras.images import CV2Format, CV2Params
+from ..types import CV2Format, CV2Params
 
 
 logger = logging.getLogger("postprocess")
+
 
 def _get_cv2params(cv2_format: CV2Format) -> CV2Params:
     r: CV2Params = []
@@ -89,9 +90,7 @@ def _run_all_postprocesses(config: Configuration) -> typing.Tuple[int, int]:
         if metafile.is_file():
             # applying the postprocess and
             # writing the files in dest_dir
-            _run_postprocess(
-                df.stem, config
-            )
+            _run_postprocess(df.stem, config)
 
     # returning number of files processed and number of file remaining
     processed = len(data_files)
@@ -109,8 +108,8 @@ class _Process:
         self._config = config
         self._lock = lock
         self._running = multiprocessing.Value("i", False)
-        self._processed= multiprocessing.Value("i", 0)
-        self._remaining= multiprocessing.Value("i", 0)
+        self._processed = multiprocessing.Value("i", 0)
+        self._remaining = multiprocessing.Value("i", 0)
         self._sleep = sleep
         self._process: typing.Optional[multiprocessing.Process] = None
 
@@ -238,7 +237,7 @@ class PostprocessThread(SkyThread):
         np.save(testfile, data)
         metadata = {"type": "deploy test file"}
         with open(metafile, "w") as f:
-            toml.dump(metadata,f)
+            toml.dump(metadata, f)
 
         # starting the postprocess process
         time_start = time.time()
@@ -278,7 +277,7 @@ class PostprocessThread(SkyThread):
     def _execute(self) -> None:
 
         if self._process is None:
-            self._process = _Process(self._config_getter,Locks.get_config_lock())
+            self._process = _Process(self._config_getter, Locks.get_config_lock())
             self._process.start()
             config = self._config_getter.get("PostprocessThread")
             self._status.set_misc("file format", str(config["fileformat"]))

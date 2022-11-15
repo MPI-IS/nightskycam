@@ -2,6 +2,7 @@ import logging
 import typing
 import requests
 import json
+import ntfy_lite
 from ..configuration_getter import ConfigurationGetter
 from ..types import Configuration
 
@@ -25,31 +26,18 @@ def publish_config(
 def publish(
     url: str,
     topic: str,
-    priority: int,
+    priority: ntfy_lite.Priority,
     title: str,
     message: str,
     tags: typing.List[str],
 ) -> None:
 
-    d = {
-        "topic": topic,
-        "message": message,
-        "title": title,
-        "tags": tags,
-        "priority": priority,
-    }
-    data = json.dumps(d)
-    response = requests.post(url, data=data)
-    if response.status_code != 200:
-        raise Exception(
-            f"failed to ntfy broadcast to topic {topic}, "
-            f"response with code {response.status_code} and text: {response.text}"
-        )
+    ntfy_lite.push(topic, title, message=message, tags=tags, priority=priority)
 
 
 def safe_publish(
     config_getter: ConfigurationGetter,
-    priority: int,
+    priority: ntfy_lite.Priority,
     title: str,
     message: str,
     tags: typing.List[str],

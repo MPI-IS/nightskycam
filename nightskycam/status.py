@@ -1,4 +1,5 @@
 from enum import Enum
+import ntfy_lite
 import logging
 import toml
 import datetime
@@ -50,16 +51,16 @@ class NtfyStatus:
     }
 
     status_priorities = {
-        Status.running: 3,
-        Status.failure: 4,
-        Status.off: 3,
-        Status.starting: 3,
+        Status.running: ntfy_lite.Priority.DEFAULT,
+        Status.failure: ntfy_lite.Priority.HIGH,
+        Status.off: ntfy_lite.Priority.DEFAULT,
+        Status.starting: ntfy_lite.Priority.DEFAULT,
     }
 
     def __init__(self):
         self.title: str = "untitled"
         self.tags: typing.List[str] = []
-        self.priority: int = 3
+        self.priority = ntfy_lite.Priority.DEFAULT
         self.message: str = "no message"
         self.time = datetime.datetime.now().strftime("%m/%d/%Y, %H:%M:%S")
 

@@ -13,7 +13,6 @@ from . import manager
 from .utils.ftp import FtpConfig, FtpServer
 from .utils.http import HttpServer
 from .utils.ntfy import NtfyHandler
-from .utils import images
 
 _logger = logging.getLogger("main")
 
@@ -237,8 +236,6 @@ def display():
         instance._camera.active_configure(gnrl_config)
         instance._camera.upon_active(gnrl_config)
         image_path, metapath = instance._step_active(config, current_dir)
-        print()
-        meta = metapath.read_text()
         print()
         print("saved image: {image_path}")
         print()
