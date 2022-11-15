@@ -29,6 +29,7 @@ def _is_active(
     end_record: typing.Optional[datetime.time],
     now: datetime.time,
 ) -> bool:
+
     if start_record is None:
         return True
     if end_record is None:
@@ -42,6 +43,7 @@ def _is_active(
         # end record: same day
         if time_now > start_record and time_now < end_record:
             return True
+
     return False
 
 
@@ -73,8 +75,6 @@ class PictureThreadConfiguration:
         self.picture_every: int = -1
         self.start_record: datetime.time = datetime.time(hour=0, minute=0)
         self.end_record: datetime.time = datetime.time(hour=0, minute=0)
-        self.postprocess: typing.Dict[str, typing.Any] = {}
-        self.file_format: str = "tiff"
 
     @classmethod
     def from_dict(cls, config: Configuration) -> object:

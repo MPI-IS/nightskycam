@@ -103,7 +103,7 @@ def ftp_test_server():
         print(f"exit with error: {e}")
 
 
-def _deploy_tests():
+def _deploy_tests()->typing.Dict[str,typing.Optional[str]]:
 
     main_dir = configuration_file_folder()
     if not main_dir.is_dir():
@@ -120,23 +120,39 @@ def _deploy_tests():
         )
 
     config_getter = DynamicConfigurationGetter(config_file)
-
-    manager.deploy_tests(config_getter)
+    results = manager.deploy_tests(config_getter)
+    return results
 
 
 def deploy_tests():
 
-    try:
-        print()
-        _deploy_tests()
-    except Exception as e:
-        print("\n* nightskycam deployment tests *failed* :", file=sys.stderr)
-        print(e, file=sys.stderr)
-        print("\n", file=sys.stderr)
-        exit(1)
+    print()
+    
+    OK = '\033[92m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    
+    results = _deploy_tests()
+    errors = False
+    for key, value in results.items():
+        if value is None:
+            print(f"{OK}---- {key}: SUCCESS{ENDC}")
+        else:
+            errors = True
+            print(f"{FAIL}---- {key}: {value}{ENDC}")
 
-    print("\n* nightskycam deployment tests: success\n")
-    exit(0)
+    print()
+            
+    if not errors:
+        print(f"{OK}\n* nightskycam deployment tests: success\n{ENDC}")
+        exit(0)
+
+    print(f"{FAIL}\n* nightskycam deployment tests *failed* :{ENDC}", file=sys.stderr)
+    errors = {key:value for key,value in results.items() if value is not None}
+    error_msg = "\n".join([f"{k}: {v}" for k, v in errors.items()])
+    print(f"{error_msg}", file=sys.stderr)
+    print("\n", file=sys.stderr)
+    exit(1)
 
 
 def _run(main_control: manager.MainControl):

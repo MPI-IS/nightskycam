@@ -26,5 +26,5 @@ class DummyCameraThread(PictureThread):
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
-        cls._check_config(config_getter, "PictureThread")
+        cls._check_config(config_getter, "DummyCameraThread")
         return None
