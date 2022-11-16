@@ -95,7 +95,7 @@ def test_list_remote_config_files(http_server):
     url = f"http://127.0.0.1:{port}"
     test_valid = nightskycam.configuration_file.is_valid_configuration_filename
     config_files = nightskycam.utils.remote_download.list_remote_files(
-        url,3.,test_valid
+        url, 3.0, test_valid
     )
 
     assert len(config_files) == len(valid_filenames)

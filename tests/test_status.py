@@ -6,7 +6,6 @@ import tempfile
 from pathlib import Path
 
 
-
 # the status thread currently does not write status to a file
 # (code commented), mostly because ntfy notification makes this
 # deprecated. But because at some point I would like to move
@@ -34,8 +33,8 @@ def commented():
                 config["nightskycam.skythreads.DummyThread"] = dummy_config
                 config["nightskycam.skythreads.StatusThread"] = status_config
 
-                config_getter = nightskycam.configuration_getter.DictConfigurationGetter(
-                    config
+                config_getter = (
+                    nightskycam.configuration_getter.DictConfigurationGetter(config)
                 )
 
                 nightskycam.manager.deploy_tests(config_getter)
