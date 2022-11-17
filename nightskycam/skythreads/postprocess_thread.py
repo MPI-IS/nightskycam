@@ -23,14 +23,15 @@ logger = logging.getLogger("postprocess")
 def _get_cv2params(cv2_format: CV2Format) -> CV2Params:
     r: CV2Params = []
     for name, value in cv2_format.items():
-        try:
-            cv2_attr = getattr(cv2, name)
-        except AttributeError as e:
-            raise AttributeError(
-                "file format configuration error: "
-                f"{name} is not a supported attribute of opencv2"
-            )
-        r.append((cv2_attr, int(value)))
+        if value != "default":
+            try:
+                cv2_attr = getattr(cv2, name)
+            except AttributeError as e:
+                raise AttributeError(
+                    "file format configuration error: "
+                    f"{name} is not a supported attribute of opencv2"
+                )
+            r.append((cv2_attr, int(value)))
     return r
 
 

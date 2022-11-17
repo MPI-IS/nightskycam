@@ -36,11 +36,84 @@ class _TestConfig:
         self.expected_shape = expected_shape
 
 
-params: typing.List[_TestConfig] = []
+params: typing.List[_TestConfig] = (
+    _TestConfig(
+        _FileFormat(
+            "tiff",
+            {"IMWRITE_TIFF_COMPRESSION":1}
+        ),
+        (
+            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
+            _Step("cv2_resize",{"ratio":2,"interpolation":"INTER_NEAREST"}),
+        ),
+        (200,100),
+        (100,50)
+    ),
+    _TestConfig(
+        _FileFormat(
+            "tiff",
+            {"IMWRITE_TIFF_COMPRESSION":4}
+        ),
+        (
+            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
+            _Step("cv2_resize",{"ratio":2,"interpolation":"INTER_NEAREST"}),
+         )
+        (200,100),
+        (100,50)
+    ),
+    _TestConfig(
+        _FileFormat(
+            "tiff",
+            {}
+        ),
+        (
+            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
+            _Step("cv2_resize",{"ratio":2,"interpolation":"INTER_NEAREST"}),
+         )
+        (100,200),
+        (50,100)
+    ),
+    _TestConfig(
+        _FileFormat(
+            "jpeg",
+            {"IMWRITE_JPEG_QUALITY":"default","IMWRITE_JPEG_RST_INTERVAL":1},
+        ),
+        (
+            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
+            _Step("cv2_resize",{"ratio":1,"interpolation":"INTER_NEAREST"}),
+         )
+        (420,640),
+        (420,640)
+    ),
+    _TestConfig(
+        _FileFormat(
+            "jpeg",
+            {"IMWRITE_JPEG_QUALITY":50,"IMWRITE_JPEG_OPTIMIZE":1},
+        ),
+        (
+            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
+            _Step("np_rebin",{"ratio":2}),
+         )
+        (420,640),
+        (210,320)
+    ),
+    _TestConfig(
+        _FileFormat(
+            "jpeg",
+            {)
+        ),
+        (
+            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
+            _Step("np_rebin",{"ratio":0.5}),
+         )
+        (120,34),
+        (240,68)
+    ),
+)
 
 
 @pytest.fixture(params=params)
-def postprocess_run(
+def postprocess_setup(
     request,
 ) -> typing.Generator[
     typing.Tuple[nightskycam.skythreads.PostprocessThread, _TestConfig], None, None
@@ -83,9 +156,9 @@ def postprocess_run(
     dest_dir_.cleanup()
 
 
-def test_postprocess_thread(postprocess_config):
+def test_postprocess_thread(postprocess_setup):
 
-    postprocess, test_config = postprocess_config
+    postprocess, test_config = postprocess_setup
 
     postprocess.deploy_test()
 
