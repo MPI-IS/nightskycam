@@ -5,10 +5,10 @@ from pathlib import Path
 from ..types import Configuration
 from ..configuration_getter import ConfigurationGetter
 from ..skythread import SkyThread
-from ..status import Status, SkyThreadStatus, StatusPriority, StatusTags
+from ..status import Status, SkyThreadStatus
 from ..running_threads import RunningThreads
-from ..utils import ntfy
 from ..utils import folder_stats
+
 
 _logger = logging.getLogger("status")
 
@@ -100,11 +100,17 @@ def _generate_report(
     )
 
 
+class StatusReportCallback:
+    def callback(self, status: Status, report: str) -> None:
+        raise NotImplementedError()
+
+
 class StatusThread(SkyThread):
-    def __init__(
-        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
-    ):
-        super().__init__(config_getter, "status", ntfy=ntfy)
+
+    callbacks: typing.List[StatusReportCallback] = []
+
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__(config_getter, "status")
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
@@ -171,13 +177,8 @@ class StatusThread(SkyThread):
 
         # if nfty activated, also publishing a report
         report, status = _generate_report(status)
-        ntfy.safe_publish(
-            self._config_getter,
-            StatusPriority[status],
-            "threads status report",
-            report,
-            [StatusTags[status], "technologist"],
-        )
+        for callback in self.callbacks:
+            callback.callback(status, report)
 
         # sleeping
         _logger.debug(f"sleeping for {config.update_every} seconds")

@@ -7,8 +7,8 @@ from ..skythread import SkyThread
 
 
 class DummyThread(SkyThread):
-    def __init__(self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True):
-        super().__init__(config_getter, "dummy",ntfy=ntfy)
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__(config_getter, "dummy")
         self._nb_exec = 0
         self._error: typing.Optional[str] = None
         self._lock = threading.Lock()

@@ -12,8 +12,8 @@ _logger = logging.getLogger("manager")
 
 
 def deploy_tests(
-        config_getter: ConfigurationGetter
-) -> typing.Dict[str,typing.Optional[str]]:
+    config_getter: ConfigurationGetter,
+) -> typing.Dict[str, typing.Optional[str]]:
     """
     Instantiates classes of SkyThread (according to the keys of the
     configuration returned by config_getter) and calls their "deploy_test"
@@ -40,7 +40,7 @@ def deploy_tests(
     skythread_classes: typing.List[typing.Type[SkyThread]] = get_skythreads(
         config_getter.get_global()
     )
-    skythreads = [class_(config_getter, ntfy=False) for class_ in skythread_classes]
+    skythreads = [class_(config_getter) for class_ in skythread_classes]
 
     # checking if each skythread "agrees" with its configuration
     config_errors: typing.Dict[str, str] = {}
@@ -57,25 +57,24 @@ def deploy_tests(
     for skythread in skythreads:
         try:
             skythread.deploy_test()
-            r[skythread.__class__.__name__]=None
+            r[skythread.__class__.__name__] = None
         except Exception as e:
-            r[skythread.__class__.__name__]=str(e)
+            r[skythread.__class__.__name__] = str(e)
     return r
-    
-            
-    if errors:
-        error_msg = "\n".join([f"{k}: {v}" for k, v in errors.items()])
+
+    if r:
+        error_msg = "\n".join([f"{k}: {v}" for k, v in r.items()])
         raise ValueError(error_msg)
 
-    
-def eval_deploy_tests(config_getter: ConfigurationGetter)->None:
+
+def eval_deploy_tests(config_getter: ConfigurationGetter) -> None:
     r = deploy_tests(config_getter)
-    errors = {key:value for key,value in r.items() if value is not None}
+    errors = {key: value for key, value in r.items() if value is not None}
     if errors:
         error_msg = "\n".join([f"{k}: {v}" for k, v in errors.items()])
         raise ValueError(error_msg)
 
-    
+
 class MainControl:
     def __init__(self):
         self.running = True

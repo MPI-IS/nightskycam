@@ -11,10 +11,8 @@ logger = logging.getLogger("http")
 
 
 class HttpThread(SkyThread):
-    def __init__(
-        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
-    ):
-        super().__init__(config_getter, "http", ntfy=ntfy)
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__(config_getter, "http")
         self._started = False
         self._server: typing.Optional[HttpServer] = None
 

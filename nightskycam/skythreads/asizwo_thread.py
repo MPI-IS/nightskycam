@@ -1,19 +1,12 @@
 import typing
-import nptyping as npt
-import camera_zwo_asi
-from pathlib import Path
-from ..cameras.camera import Camera
 from ..cameras.asizwo_camera import AsiZwoCamera
 from .picture_thread import PictureThread
 from ..configuration_getter import ConfigurationGetter
-from ..cameras.images import Image
 
 
 class AsiZwoThread(PictureThread):
-    def __init__(
-        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
-    ):
-        super().__init__("asi_zwo", config_getter, ntfy=ntfy)
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__("asi_zwo", config_getter)
 
     @classmethod
     def get_camera(cls, config: typing.Mapping[str, typing.Any]) -> AsiZwoCamera:

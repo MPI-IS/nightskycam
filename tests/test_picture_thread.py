@@ -1,3 +1,4 @@
+import typing
 import tempfile
 import threading
 import time
@@ -32,7 +33,7 @@ def _get_config(
         start = (now + timedelta(hours=1)).strftime("%H:%M")
         end = (now + timedelta(hours=2)).strftime("%H:%M")
 
-    config = {}
+    config: typing.Dict[str, typing.Any] = {}
 
     main_config = {"period": 0.1}
     dummy_config = {

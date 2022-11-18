@@ -1,10 +1,12 @@
 import time
+import tempfile
 import typing
 import pytest
 import toml
 import cv2
 import numpy as np
 import nightskycam
+from pathlib import Path
 
 
 class _FileFormat:
@@ -36,80 +38,82 @@ class _TestConfig:
         self.expected_shape = expected_shape
 
 
-params: typing.List[_TestConfig] = (
+params: typing.Tuple[_TestConfig, ...] = (
     _TestConfig(
-        _FileFormat(
-            "tiff",
-            {"IMWRITE_TIFF_COMPRESSION":1}
-        ),
+        _FileFormat("tiff", {"IMWRITE_TIFF_COMPRESSION": 1}),
         (
-            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
-            _Step("cv2_resize",{"ratio":2,"interpolation":"INTER_NEAREST"}),
+            _Step("convert_color", {"conversion_code": "COLOR_BAYER_RGGB2BGR"}),
+            _Step("cv2_resize", {"ratio": 2, "interpolation": "INTER_NEAREST"}),
         ),
-        (200,100),
-        (100,50)
-    ),
-    _TestConfig(
-        _FileFormat(
-            "tiff",
-            {"IMWRITE_TIFF_COMPRESSION":4}
-        ),
-        (
-            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
-            _Step("cv2_resize",{"ratio":2,"interpolation":"INTER_NEAREST"}),
-         )
-        (200,100),
-        (100,50)
-    ),
-    _TestConfig(
-        _FileFormat(
-            "tiff",
-            {}
-        ),
-        (
-            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
-            _Step("cv2_resize",{"ratio":2,"interpolation":"INTER_NEAREST"}),
-         )
-        (100,200),
-        (50,100)
-    ),
-    _TestConfig(
-        _FileFormat(
-            "jpeg",
-            {"IMWRITE_JPEG_QUALITY":"default","IMWRITE_JPEG_RST_INTERVAL":1},
-        ),
-        (
-            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
-            _Step("cv2_resize",{"ratio":1,"interpolation":"INTER_NEAREST"}),
-         )
-        (420,640),
-        (420,640)
-    ),
-    _TestConfig(
-        _FileFormat(
-            "jpeg",
-            {"IMWRITE_JPEG_QUALITY":50,"IMWRITE_JPEG_OPTIMIZE":1},
-        ),
-        (
-            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
-            _Step("np_rebin",{"ratio":2}),
-         )
-        (420,640),
-        (210,320)
-    ),
-    _TestConfig(
-        _FileFormat(
-            "jpeg",
-            {)
-        ),
-        (
-            _Step("convert_color",{"conversion_code":"COLOR_BAYER_RGGB2BGR"}),
-            _Step("np_rebin",{"ratio":0.5}),
-         )
-        (120,34),
-        (240,68)
+        (200, 100),
+        (100, 50),
     ),
 )
+
+
+def commented():
+    params: typing.Tuple[_TestConfig, ...] = (
+        _TestConfig(
+            _FileFormat("tiff", {"IMWRITE_TIFF_COMPRESSION": 1}),
+            (
+                _Step("convert_color", {"conversion_code": "COLOR_BAYER_RGGB2BGR"}),
+                _Step("cv2_resize", {"ratio": 2, "interpolation": "INTER_NEAREST"}),
+            ),
+            (200, 100),
+            (100, 50),
+        ),
+        _TestConfig(
+            _FileFormat("tiff", {"IMWRITE_TIFF_COMPRESSION": 4}),
+            (
+                _Step("convert_color", {"conversion_code": "COLOR_BAYER_RGGB2BGR"}),
+                _Step("cv2_resize", {"ratio": 2, "interpolation": "INTER_NEAREST"}),
+            ),
+            (200, 100),
+            (100, 50),
+        ),
+        _TestConfig(
+            _FileFormat("tiff", {}),
+            (
+                _Step("convert_color", {"conversion_code": "COLOR_BAYER_RGGB2BGR"}),
+                _Step("cv2_resize", {"ratio": 2, "interpolation": "INTER_NEAREST"}),
+            ),
+            (100, 200),
+            (50, 100),
+        ),
+        _TestConfig(
+            _FileFormat(
+                "jpeg",
+                {"IMWRITE_JPEG_QUALITY": "default", "IMWRITE_JPEG_RST_INTERVAL": 1},
+            ),
+            (
+                _Step("convert_color", {"conversion_code": "COLOR_BAYER_RGGB2BGR"}),
+                _Step("cv2_resize", {"ratio": 1, "interpolation": "INTER_NEAREST"}),
+            ),
+            (420, 640),
+            (420, 640),
+        ),
+        _TestConfig(
+            _FileFormat(
+                "jpeg",
+                {"IMWRITE_JPEG_QUALITY": 50, "IMWRITE_JPEG_OPTIMIZE": 1},
+            ),
+            (
+                _Step("convert_color", {"conversion_code": "COLOR_BAYER_RGGB2BGR"}),
+                _Step("np_rebin", {"ratio": 2}),
+            ),
+            (420, 640),
+            (210, 320),
+        ),
+        _TestConfig(
+            _FileFormat("jpeg", {}),
+            (
+                _Step("convert_color", {"conversion_code": "COLOR_BAYER_RGGB2BGR"}),
+                _Step("np_rebin", {"ratio": 0.5}),
+            ),
+            (120, 34),
+            (240, 68),
+        ),
+    )
 
 
 @pytest.fixture(params=params)
@@ -126,20 +130,21 @@ def postprocess_setup(
     dest_dir = Path(dest_dir_.name)
 
     test_config: _TestConfig = request.param
-    steps: [step.step_name for step in test_config.steps]
+    steps = [step.name for step in test_config.steps]
 
     main_config = {"period": 0.1}
 
-    postp_config = {
+    postp_config: typing.Dict[str, typing.Any] = {
         "src_dir": src_dir,
-        "dest_dir": test_dir,
+        "dest_dir": dest_dir,
         "fileformat": test_config.fileformat.fileformat,
         test_config.fileformat.fileformat: test_config.fileformat.cv2params,
-        steps: steps,
+        "steps": steps,
     }
-    for step in steps:
+    for step in test_config.steps:
         postp_config[step.name] = step.config
 
+    config: typing.Dict[str, typing.Any] = {}
     config["main"] = main_config
     config["nightskycam.skythreads.PostprocessThread"] = postp_config
 
@@ -147,7 +152,7 @@ def postprocess_setup(
 
     nightskycam.skythreads.PostprocessThread.check_config(config_getter)
 
-    instance = nightskycam.skythreads.PostprocessThread(config_getter, ntfy=False)
+    instance = nightskycam.skythreads.PostprocessThread(config_getter)
 
     yield instance, test_config
 
@@ -184,7 +189,7 @@ def test_postprocess_thread(postprocess_setup):
     )
     assert len(dest_images) == 2
 
-    dest_metas = list(test_config.dest_dir.glob(f"*.toml"))
+    dest_metas = list(test_config.dest_dir.glob("*.toml"))
     assert len(dest_metas) == 2
 
     with open(dest_metas[0], "r") as f:

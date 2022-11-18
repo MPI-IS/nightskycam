@@ -1,23 +1,38 @@
 import logging
 import typing
-import ntfy_lite
 from ..skythread import SkyThread
 from ..configuration_getter import ConfigurationGetter
 from ..types import Configuration
 from ..command_file import execute_new_command, get_remote_command_file, CommandResult
 from ..local_command_file import execute_local_command
-from ..utils import ntfy
 
 _logger = logging.getLogger("command")
 
 
+class CommandCallback:
+    def callback(self, output: typing.Optional[CommandResult]) -> None:
+        raise NotImplementedError()
+
+
+class _LoggerCallback(CommandCallback):
+    def callback(self, output: typing.Optional[CommandResult]) -> None:
+        if output is None:
+            _logger.debug("no new command file")
+            return
+        if output.return_code == 0:
+            _logger.info(f"executed {output.filename} with return code 0")
+        else:
+            _logger.error(
+                f"executed {output.filename} with " f"return code {output.return_code}"
+            )
+
+
 class CommandThread(SkyThread):
-    def __init__(
-        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
-    ):
-        super().__init__(
-            config_getter, "command", tags=["hammer_and_wrench"], ntfy=ntfy
-        )
+
+    callbacks: typing.List[CommandCallback] = [_LoggerCallback()]
+
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__(config_getter, "command", tags=["hammer_and_wrench"])
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
@@ -49,34 +64,6 @@ class CommandThread(SkyThread):
                 f"from {config['url']}: {e}"
             )
 
-    def _feedback(self, output: typing.Optional[CommandResult]) -> None:
-        def _tags(output: CommandResult) -> typing.List[str]:
-            if output.return_code == 0:
-                return ["hammer_and_wrench"]
-            return ["tornado"]
-
-        def _ntfy_level(output: CommandResult) -> ntfy_lite.Priority:
-            if output.return_code == 0:
-                return ntfy_lite.Priority.DEFAULT
-            return ntfy_lite.Priority.HIGH
-
-        if output is None:
-            _logger.debug("no new command file")
-            return
-        if output.return_code == 0:
-            _logger.info(f"executed {output.filename} with return code 0")
-        else:
-            _logger.error(
-                f"executed {output.filename} with " f"return code {output.return_code}"
-            )
-        ntfy.safe_publish(
-            self._config_getter,
-            _ntfy_level(output),
-            f"executed command: {output.filename} (return code: {output.return_code})",
-            f"stdout:\n{output.stdout}\nstderr:\n{output.stderr}",
-            _tags(output),
-        )
-
     def _execute(self) -> None:
 
         _logger.debug("reading configuration")
@@ -87,7 +74,8 @@ class CommandThread(SkyThread):
         except Exception as e:
             _logger.error(f"failed to execute command: {e}")
         else:
-            self._feedback(output)
+            for callback in self.callbacks:
+                callback.callback(output)
 
         try:
             output = execute_local_command()
@@ -95,6 +83,7 @@ class CommandThread(SkyThread):
             _logger.error(f"failed to execute local command: {e}")
         else:
             if output:
-                self._feedback(output)
+                for callback in self.callbacks:
+                    callback.callback(output)
 
         self.sleep(float(config["update_every"]))

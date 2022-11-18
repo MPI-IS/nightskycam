@@ -125,10 +125,8 @@ def _upload_files(
 
 
 class FtpThread(SkyThread):
-    def __init__(
-        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
-    ):
-        super().__init__(config_getter, "ftp", tags=["satellite"], ntfy=ntfy)
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__(config_getter, "ftp", tags=["satellite"])
         self._nb_files = 0
         self._uploaded_size = 0
 

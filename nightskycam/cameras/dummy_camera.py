@@ -5,7 +5,7 @@ from . import images
 
 
 class DummyCamera(Camera):
-    def __init__(self, width: int=200, height: int=100) -> None:
+    def __init__(self, width: int = 200, height: int = 100) -> None:
         super().__init__()
         self._width = width
         self._height = height

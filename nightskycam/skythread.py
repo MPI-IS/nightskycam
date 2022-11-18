@@ -15,13 +15,12 @@ class SkyThread:
         config_getter: ConfigurationGetter,
         name: str = "SkyThread",
         tags: typing.Optional[typing.List[str]] = None,
-        ntfy: typing.Optional[bool] = True,
     ) -> None:
         self._config_getter = config_getter
         self._name = name
         self._thread: typing.Optional[threading.Thread] = None
         self._running = False
-        self._status = SkyThreadStatus(name, config_getter, tags=tags, ntfy=ntfy)
+        self._status = SkyThreadStatus(name, config_getter, tags=tags)
 
     def get_status(self):
         return self._status

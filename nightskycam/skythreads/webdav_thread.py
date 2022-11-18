@@ -23,10 +23,8 @@ def get_ip() -> typing.List[str]:
 
 
 class WebdavThread(SkyThread):
-    def __init__(
-        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
-    ):
-        super().__init__(config_getter, "webdav", ntfy=ntfy)
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__(config_getter, "webdav")
         self._started = False
         self._process: typing.Optional[subprocess.Popen] = None
 

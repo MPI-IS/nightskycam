@@ -1,16 +1,12 @@
-import numpy as np
 import typing
 import time
-import shutil
 import datetime
 import logging
 from pathlib import Path
-import nptyping as npt
 from ..configuration_getter import ConfigurationGetter
 from ..types import Configuration
 from ..skythread import SkyThread
 from ..metadata import Meta
-from ..utils import postprocess
 from ..cameras import images, camera
 
 _logger = logging.getLogger("picture")
@@ -124,9 +120,8 @@ class PictureThread(SkyThread):
         self,
         name: str,
         config_getter: ConfigurationGetter,
-        ntfy: typing.Optional[bool] = True,
     ) -> None:
-        super().__init__(config_getter, name, tags=["camera_flash"], ntfy=ntfy)
+        super().__init__(config_getter, name, tags=["camera_flash"])
         full_class_name = str(type(self))
         if full_class_name.endswith("'>"):
             full_class_name = full_class_name[:-2]

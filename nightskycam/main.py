@@ -8,7 +8,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from .configuration_file import configuration_file_folder, get_skythreads
 from .configuration_getter import DynamicConfigurationGetter, FixedConfigurationGetter
-from .skythreads import PictureThread
+from .status import SkyThreadStatus
+from .skythreads import PictureThread, ConfigThread, CommandThread, StatusThread
 from . import manager
 from .utils.ftp import FtpConfig, FtpServer
 from .utils.http import HttpServer
@@ -103,7 +104,7 @@ def ftp_test_server():
         print(f"exit with error: {e}")
 
 
-def _deploy_tests()->typing.Dict[str,typing.Optional[str]]:
+def _deploy_tests() -> typing.Dict[str, typing.Optional[str]]:
 
     main_dir = configuration_file_folder()
     if not main_dir.is_dir():
@@ -127,11 +128,11 @@ def _deploy_tests()->typing.Dict[str,typing.Optional[str]]:
 def deploy_tests():
 
     print()
-    
-    OK = '\033[92m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    
+
+    OK = "\033[92m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+
     results = _deploy_tests()
     errors = False
     for key, value in results.items():
@@ -142,13 +143,13 @@ def deploy_tests():
             print(f"{FAIL}---- {key}: {value}{ENDC}")
 
     print()
-            
+
     if not errors:
         print(f"{OK}\n* nightskycam deployment tests: success\n{ENDC}")
         exit(0)
 
     print(f"{FAIL}\n* nightskycam deployment tests *failed* :{ENDC}", file=sys.stderr)
-    errors = {key:value for key,value in results.items() if value is not None}
+    errors = {key: value for key, value in results.items() if value is not None}
     error_msg = "\n".join([f"{k}: {v}" for k, v in errors.items()])
     print(f"{error_msg}", file=sys.stderr)
     print("\n", file=sys.stderr)
@@ -189,6 +190,14 @@ def _run(main_control: manager.MainControl):
             )
 
     _set_log(local_log_file, config_getter)
+
+    if "ntfy" in config:
+        from .utils import ntfy
+
+        SkyThreadStatus.callbacks.append(ntfy.NtfyStatusChangeCallback(config_getter))
+        CommandThread.callbacks.append(ntfy.NtfyCommandThreadCallback(config_getter))
+        ConfigThread.callbacks.append(ntfy.NtfyConfigThreadCallback(config_getter))
+        StatusThread.callbacks.append(ntfy.NtfyStatusThreadCallback(config_getter))
 
     _logger.info("starting nightskycam")
     manager.run(main_control, config_getter)

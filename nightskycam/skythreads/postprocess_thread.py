@@ -13,7 +13,6 @@ from ..types import Configuration
 from ..utils import postprocess
 from ..skythread import SkyThread
 from ..configuration_getter import ConfigurationGetter
-from ..configuration_file import configuration_file_folder
 from ..types import CV2Format, CV2Params
 
 
@@ -26,7 +25,7 @@ def _get_cv2params(cv2_format: CV2Format) -> CV2Params:
         if value != "default":
             try:
                 cv2_attr = getattr(cv2, name)
-            except AttributeError as e:
+            except AttributeError:
                 raise AttributeError(
                     "file format configuration error: "
                     f"{name} is not a supported attribute of opencv2"
@@ -65,7 +64,7 @@ def _run_postprocess(
 
     # saving the image
     image = images.Image(postdata, postmeta, filename)
-    image.save(Path(config["dest_dir"]), fileformat=fileformat, cv2params=cv2params)
+    image.save(dest_dir, fileformat=fileformat, cv2params=cv2params)
 
 
 def _run_all_postprocesses(config: Configuration) -> typing.Tuple[int, int]:
@@ -145,10 +144,8 @@ class _Process:
 
 
 class PostprocessThread(SkyThread):
-    def __init__(
-        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
-    ):
-        super().__init__(config_getter, "postprocess", ntfy=ntfy)
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__(config_getter, "postprocess")
         self._process: typing.Optional[_Process] = None
 
     @classmethod
@@ -204,7 +201,7 @@ class PostprocessThread(SkyThread):
         # checking all postprocess step is known
         postprocesses = [v for v in config.values() if not v == "steps"]
         for step in steps:
-            if not step in postprocesses:
+            if step not in postprocesses:
                 return str(
                     f"the postprocess {step} is required by steps "
                     f"({str(steps)}) but has no related configuration key"
