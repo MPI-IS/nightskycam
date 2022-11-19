@@ -30,7 +30,8 @@ def _get_cv2params(cv2_format: CV2Format) -> CV2Params:
                     "file format configuration error: "
                     f"{name} is not a supported attribute of opencv2"
                 )
-            r.append((cv2_attr, int(value)))
+            r.append(cv2_attr)
+            r.append(int(value))
     return r
 
 
@@ -63,9 +64,13 @@ def _run_postprocess(
     meta["postprocess"] = postmeta
 
     # saving the image
-    image = images.Image(postdata, postmeta, filename)
+    image = images.Image(postdata, meta, filename)
     image.save(dest_dir, fileformat=fileformat, cv2params=cv2params)
 
+    # deleting the processed files
+    data_file.unlink()
+    meta_file.unlink()
+    
 
 def _run_all_postprocesses(config: Configuration) -> typing.Tuple[int, int]:
 
@@ -199,7 +204,9 @@ class PostprocessThread(SkyThread):
             return "the value for the key 'steps' should be a list"
 
         # checking all postprocess step is known
-        postprocesses = [v for v in config.values() if not v == "steps"]
+        postprocesses = [
+            k for k in config.keys() if not k in ("steps","fileformat","batch_size")
+        ]
         for step in steps:
             if step not in postprocesses:
                 return str(
@@ -231,7 +238,7 @@ class PostprocessThread(SkyThread):
         filename = "deploy_test"
         testfile = Path(config["src_dir"]) / f"{filename}.npy"
         metafile = Path(config["src_dir"]) / f"{filename}.toml"
-        data = np.zeros((200, 400))
+        data = np.zeros((300,600),np.uint16)
         np.save(testfile, data)
         metadata = {"type": "deploy test file"}
         with open(metafile, "w") as f:

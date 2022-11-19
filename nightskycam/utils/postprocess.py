@@ -133,8 +133,8 @@ def apply(
             )
 
         kwargs = postconfig[fn]
-
         supported_kwargs = _get_kwargs(supported_fn[fn])
+
         for kwarg_key in kwargs.keys():
             if kwarg_key not in supported_kwargs:
                 supported = ", ".join(supported_kwargs)
@@ -150,7 +150,8 @@ def apply(
             except Exception as e:
                 raise e.__class__(
                     f"failed to apply postprocess method '{fn}' with "
-                    f"arguments '{kwargs}': {e}"
+                    f"arguments '{kwargs}': {e}. "
+                    f"(input image: shape {image.shape} dtype: {image.dtype})"
                 )
 
     return image
