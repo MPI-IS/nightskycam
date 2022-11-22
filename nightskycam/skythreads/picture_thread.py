@@ -98,8 +98,12 @@ class PictureThreadConfiguration:
         for path in paths:
             value_ = getattr(instance, path)
             value = Path(value_)
-            if not value.is_dir():
-                raise FileNotFoundError(f"failed to find the directory 'path' {value} ")
+            try:
+                value.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                raise FileNotFoundError(
+                    f"failed to find or create the directory 'path' {value}: {e}"
+                )
             else:
                 setattr(instance, path, value)
 

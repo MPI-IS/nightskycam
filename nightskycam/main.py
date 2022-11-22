@@ -121,7 +121,9 @@ def _deploy_tests() -> typing.Dict[str, typing.Optional[str]]:
         )
 
     config_getter = DynamicConfigurationGetter(config_file)
+
     results = manager.deploy_tests(config_getter)
+    
     return results
 
 
@@ -137,18 +139,18 @@ def deploy_tests():
     errors = False
     for key, value in results.items():
         if value is None:
-            print(f"{OK}---- {key}: SUCCESS{ENDC}")
+            print(f"---- {key}: {OK}SUCCESS{ENDC}")
         else:
             errors = True
-            print(f"{FAIL}---- {key}: {value}{ENDC}")
+            print(f"---- {key}: {FAIL}{value}{ENDC}")
 
     print()
 
     if not errors:
-        print(f"{OK}\n* nightskycam deployment tests: success\n{ENDC}")
+        print(f"\n* nightskycam deployment tests: {OK}success{ENDC}\n")
         exit(0)
 
-    print(f"{FAIL}\n* nightskycam deployment tests *failed* :{ENDC}", file=sys.stderr)
+    print(f"\n* nightskycam deployment tests {FAIL}*failed*{ENDC}:", file=sys.stderr)
     errors = {key: value for key, value in results.items() if value is not None}
     error_msg = "\n".join([f"{k}: {v}" for k, v in errors.items()])
     print(f"{error_msg}", file=sys.stderr)

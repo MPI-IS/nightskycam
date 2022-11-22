@@ -5,7 +5,8 @@ import ntfy_lite
 from .skythread import SkyThread
 from .types import Configuration
 from .configuration_getter import ConfigurationGetter
-from .running_threads import RunningThreads, skythreads_stop, get_skythreads
+from .configuration_file import get_skythreads
+from .running_threads import RunningThreads, skythreads_stop
 from .utils import ntfy
 
 _logger = logging.getLogger("manager")
@@ -41,30 +42,21 @@ def deploy_tests(
         config_getter.get_global()
     )
     skythreads = [class_(config_getter) for class_ in skythread_classes]
-
+    
     # checking if each skythread "agrees" with its configuration
-    config_errors: typing.Dict[str, str] = {}
+    errors: typing.Dict[str, Optional[str]] = {}
     for skythread in skythreads:
         error = skythread.check_config(config_getter)
         if error is not None:
-            config_errors[skythread.__class__.__name__] = error
-    if config_errors:
-        error_msg = "\n".join([f"{k}: {v}" for k, v in config_errors.items()])
-        raise ValueError(error_msg)
-
-    # having each skythread run its deployment test
-    r: typing.Dict[str, typing.Optional[str]] = {}
-    for skythread in skythreads:
-        try:
-            skythread.deploy_test()
-            r[skythread.__class__.__name__] = None
-        except Exception as e:
-            r[skythread.__class__.__name__] = str(e)
-    return r
-
-    if r:
-        error_msg = "\n".join([f"{k}: {v}" for k, v in r.items()])
-        raise ValueError(error_msg)
+            errors[skythread.__class__.__name__] = error
+        else:
+            try:
+                skythread.deploy_test()
+                errors[skythread.__class__.__name__] = None
+            except Exception as e:
+                errors[skythread.__class__.__name__] = str(e)
+            
+    return errors
 
 
 def eval_deploy_tests(config_getter: ConfigurationGetter) -> None:

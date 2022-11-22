@@ -1,6 +1,9 @@
 # flake8: noqa
 
-from .asizwo_thread import AsiZwoThread
+try:
+    from .asizwo_thread import AsiZwoThread
+except ModuleNotFoundError:
+    pass
 from .dummy_camera_thread import DummyCameraThread
 from .config_thread import ConfigThread
 from .ftp_thread import FtpThread

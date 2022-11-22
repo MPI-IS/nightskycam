@@ -233,6 +233,11 @@ class NtfyStatusChangeCallback(StatusChangeCallback):
             ),
         )
 
+        print()
+        print("NTFY !")
+        print(ntfy_status.priority)
+        print()
+        
         safe_publish(
             self._config_getter,
             ntfy_status.priority,

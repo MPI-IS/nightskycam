@@ -8,7 +8,7 @@ from ..skythread import SkyThread
 from ..status import Status, SkyThreadStatus
 from ..running_threads import RunningThreads
 from ..utils import folder_stats
-
+from ..version import __version__
 
 _logger = logging.getLogger("status")
 
@@ -91,6 +91,8 @@ def _generate_report(
     misc_infos.append(
         f"local date and time: {datetime.datetime.now().strftime('%m/%d/%Y, %H:%M:%S')}"
     )
+    misc_infos.append(f"nightskycam software version {__version__}")
+        
     misc_infos.append(folder_stats.disk_stats())
     misc_infos_str = "\n".join(misc_infos)
 
