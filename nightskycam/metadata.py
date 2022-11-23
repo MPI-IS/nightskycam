@@ -1,12 +1,11 @@
 from datetime import datetime
 import typing
-import toml
 import socket
 
 
 class Meta:
     @classmethod
-    def get(cls) -> typing.Tuple[str, str]:
+    def get(cls) -> typing.Tuple[str, typing.Dict[str, typing.Any]]:
 
         # getting current date and time as string
         date = datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
@@ -20,4 +19,4 @@ class Meta:
         # metadata dictionary
         d = {"date": date, "hostname": hostname}
 
-        return filename, toml.dumps(d)
+        return filename, d

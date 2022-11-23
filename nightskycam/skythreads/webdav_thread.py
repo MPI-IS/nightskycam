@@ -13,7 +13,9 @@ _logger = logging.getLogger("webdav")
 
 def _run_webdav(target_dir: Path, port: int = 8008) -> subprocess.Popen:
     command = f"exec wsgidav --host=0.0.0.0 --port={port} --root={target_dir} --auth=anonymous"
-    process = subprocess.Popen(command, shell=True)
+    process = subprocess.Popen(
+        command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
     return process
 
 
@@ -23,10 +25,8 @@ def get_ip() -> typing.List[str]:
 
 
 class WebdavThread(SkyThread):
-    def __init__(
-        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
-    ):
-        super().__init__(config_getter, "webdav", ntfy=ntfy)
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__(config_getter, "webdav")
         self._started = False
         self._process: typing.Optional[subprocess.Popen] = None
 
