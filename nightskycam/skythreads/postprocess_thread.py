@@ -36,13 +36,13 @@ def _get_cv2params(cv2_format: CV2Format) -> CV2Params:
 
 
 def _run_postprocess(
-    filename: str,
-    config: Configuration,
+    filename: str, config: Configuration, copy_to_latest: bool
 ) -> None:
 
     # reading the configuration
     src_dir = Path(config["src_dir"])
     dest_dir = Path(config["dest_dir"])
+    latest_dir = Path(config["latest_dir"])
     fileformat = str(config["fileformat"])
     cv2params = _get_cv2params(config[fileformat])
 
@@ -66,13 +66,18 @@ def _run_postprocess(
     # saving the image
     image = images.Image(postdata, meta, filename)
     image.save(dest_dir, fileformat=fileformat, cv2params=cv2params)
+    if copy_to_latest:
+        image.filename = "latest"
+        image.save(latest_dir, fileformat=fileformat, cv2params=cv2params)
 
     # deleting the processed files
     data_file.unlink()
     meta_file.unlink()
-    
 
-def _run_all_postprocesses(config: Configuration) -> typing.Tuple[int, int]:
+
+def _run_all_postprocesses(
+    config: Configuration, copy_to_latest: bool
+) -> typing.Tuple[int, int]:
 
     # reading the configuration
     src_dir = Path(config["src_dir"])
@@ -95,7 +100,7 @@ def _run_all_postprocesses(config: Configuration) -> typing.Tuple[int, int]:
         if metafile.is_file():
             # applying the postprocess and
             # writing the files in dest_dir
-            _run_postprocess(df.stem, config)
+            _run_postprocess(df.stem, config, copy_to_latest)
 
     # returning number of files processed and number of file remaining
     processed = len(data_files)
@@ -109,6 +114,7 @@ class _Process:
         config: ConfigurationGetter,
         lock: LockBase,
         sleep: float = 0.2,
+        copy_to_latest: bool = True,
     ) -> None:
         self._config = config
         self._lock = lock
@@ -117,12 +123,13 @@ class _Process:
         self._remaining = multiprocessing.Value("i", 0)
         self._sleep = sleep
         self._process: typing.Optional[multiprocessing.Process] = None
+        self._copy_to_latest = copy_to_latest
 
     def _run(self) -> None:
         self._running.value = True
         while self._running.value:
             config = self._config.get("PostprocessThread")
-            processed, remaining = _run_all_postprocesses(config)
+            processed, remaining = _run_all_postprocesses(config, self._copy_to_latest)
             self._processed.value += processed
             self._remaining.value = remaining
             time.sleep(self._sleep)
@@ -161,7 +168,8 @@ class PostprocessThread(SkyThread):
 
         # src_dir: where the images to process will be located
         # dest_dir: where the processed images will be saved
-        pathkeys = ("src_dir", "dest_dir")
+        # latest_dir: where the processed images will be saved (but with generic name)
+        pathkeys = ("src_dir", "dest_dir", "latest_dir")
         # checking the configuration values exist
         for pathkey in pathkeys:
             try:
@@ -205,7 +213,7 @@ class PostprocessThread(SkyThread):
 
         # checking all postprocess step is known
         postprocesses = [
-            k for k in config.keys() if not k in ("steps","fileformat","batch_size")
+            k for k in config.keys() if not k in ("steps", "fileformat", "batch_size")
         ]
         for step in steps:
             if step not in postprocesses:
@@ -238,7 +246,7 @@ class PostprocessThread(SkyThread):
         filename = "deploy_test"
         testfile = Path(config["src_dir"]) / f"{filename}.npy"
         metafile = Path(config["src_dir"]) / f"{filename}.toml"
-        data = np.zeros((300,600),np.uint16)
+        data = np.zeros((300, 600), np.uint16)
         np.save(testfile, data)
         metadata = {"type": "deploy test file"}
         with open(metafile, "w") as f:
@@ -247,7 +255,9 @@ class PostprocessThread(SkyThread):
         # starting the postprocess process
         time_start = time.time()
         timeout = 5.0
-        with _Process(self._config_getter, Locks.get_config_lock()) as p:
+        with _Process(
+            self._config_getter, Locks.get_config_lock(), copy_to_latest=False
+        ) as p:
             while True:
                 treated, _ = p.get_stats()
                 if treated >= 1:
@@ -274,6 +284,9 @@ class PostprocessThread(SkyThread):
                 f"have generated ({final_testfile})"
             )
 
+        final_testfile.unlink()
+        final_metafile.unlink()
+
     def on_exit(self) -> None:
         if self._process is not None:
             self._process.stop()
@@ -282,7 +295,9 @@ class PostprocessThread(SkyThread):
     def _execute(self) -> None:
 
         if self._process is None:
-            self._process = _Process(self._config_getter, Locks.get_config_lock())
+            self._process = _Process(
+                self._config_getter, Locks.get_config_lock(), copy_to_latest=True
+            )
             self._process.start()
             config = self._config_getter.get("PostprocessThread")
             self._status.set_misc("file format", str(config["fileformat"]))

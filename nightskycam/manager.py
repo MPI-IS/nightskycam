@@ -42,9 +42,9 @@ def deploy_tests(
         config_getter.get_global()
     )
     skythreads = [class_(config_getter) for class_ in skythread_classes]
-    
+
     # checking if each skythread "agrees" with its configuration
-    errors: typing.Dict[str, Optional[str]] = {}
+    errors: typing.Dict[str, typing.Optional[str]] = {}
     for skythread in skythreads:
         error = skythread.check_config(config_getter)
         if error is not None:
@@ -55,7 +55,7 @@ def deploy_tests(
                 errors[skythread.__class__.__name__] = None
             except Exception as e:
                 errors[skythread.__class__.__name__] = str(e)
-            
+
     return errors
 
 

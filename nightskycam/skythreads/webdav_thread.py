@@ -14,8 +14,7 @@ _logger = logging.getLogger("webdav")
 def _run_webdav(target_dir: Path, port: int = 8008) -> subprocess.Popen:
     command = f"exec wsgidav --host=0.0.0.0 --port={port} --root={target_dir} --auth=anonymous"
     process = subprocess.Popen(
-        command, shell=True,
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+        command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )
     return process
 
@@ -49,7 +48,6 @@ class WebdavThread(SkyThread):
         process = _run_webdav(configuration_file_folder(), int(config["port"]))
         time.sleep(1)
         process.kill()
-
 
     def on_exit(self) -> None:
         if self._process is not None:

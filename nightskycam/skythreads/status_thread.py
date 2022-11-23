@@ -92,7 +92,7 @@ def _generate_report(
         f"local date and time: {datetime.datetime.now().strftime('%m/%d/%Y, %H:%M:%S')}"
     )
     misc_infos.append(f"nightskycam software version {__version__}")
-        
+
     misc_infos.append(folder_stats.disk_stats())
     misc_infos_str = "\n".join(misc_infos)
 

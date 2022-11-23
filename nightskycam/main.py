@@ -123,7 +123,7 @@ def _deploy_tests() -> typing.Dict[str, typing.Optional[str]]:
     config_getter = DynamicConfigurationGetter(config_file)
 
     results = manager.deploy_tests(config_getter)
-    
+
     return results
 
 

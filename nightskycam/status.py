@@ -127,7 +127,7 @@ class SkyThreadStatus:
                 set_status_fn(self, error)
             if self._status != previous_status:
                 for callback in self.callbacks:
-                    with self._callback_lock:
+                    with self._callbacks_lock:
                         callback.callback(
                             self._name,
                             self._status,

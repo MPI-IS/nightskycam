@@ -178,7 +178,7 @@ class PictureThread(SkyThread):
                     f"in the file {target_file}. But this file could not be found."
                 )
             else:
-                target_file.unlink()
+                image.delete(config.target_dir)
 
     def _step_active(
         self,

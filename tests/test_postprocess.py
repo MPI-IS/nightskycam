@@ -9,55 +9,52 @@ import nightskycam
 from pathlib import Path
 
 
-
 def test_convert_color():
 
     conversion_code = "COLOR_BAYER_BG2BGR"
-    image_in = np.zeros((300,),np.uint16)
+    image_in = np.zeros((300,), np.uint16)
     image_out = nightskycam.utils.postprocess.convert_color(image_in, conversion_code)
-    assert image_out.shape == (300,1,3)
+    assert image_out.shape == (300, 1, 3)
 
 
 def test_convert_color_then_size():
 
-    config: typing.Dict[str,typing.Any] = {}
-    config["steps"] = ["convert_color","cv2_resize"]
-    
-    config["convert_color"]: typing.Dict[str,typing.Any] = {}
-    config["convert_color"]["conversion_code"]= "COLOR_BAYER_RGGB2BGR"
+    config: typing.Dict[str, typing.Any] = {}
+    config["steps"] = ["convert_color", "cv2_resize"]
 
-    config["cv2_resize"]: typing.Dict[str,typing.Any] = {}
+    config["convert_color"]: typing.Dict[str, typing.Any] = {}
+    config["convert_color"]["conversion_code"] = "COLOR_BAYER_RGGB2BGR"
+
+    config["cv2_resize"]: typing.Dict[str, typing.Any] = {}
     config["cv2_resize"]["ratio"] = 2
     config["cv2_resize"]["interpolation"] = "INTER_NEAREST"
 
-    image_in = np.zeros((300,600),np.uint16)
-    image_out = nightskycam.utils.postprocess.apply(
-        image_in, config
-    )
+    image_in = np.zeros((300, 600), np.uint16)
+    image_out = nightskycam.utils.postprocess.apply(image_in, config)
 
-    assert image_out.shape == (150,300,3)
+    assert image_out.shape == (150, 300, 3)
     assert image_out.dtype == np.uint16
 
-    
+
 def test_fileformat_write():
 
-    image_in = np.zeros((150,300,3),np.uint16)
+    image_in = np.zeros((150, 300, 3), np.uint16)
     fileformat = "tiff"
-    meta = {"test":"test_fileformat_write"}
-    config: typing.Dict[str,typing.Any] = {"IMWRITE_TIFF_COMPRESSION":1}
+    meta = {"test": "test_fileformat_write"}
+    config: typing.Dict[str, typing.Any] = {"IMWRITE_TIFF_COMPRESSION": 1}
     cv2params = nightskycam.skythreads.postprocess_thread._get_cv2params(config)
 
-    image = nightskycam.cameras.images.Image(image_in,meta,filename="test")
+    image = nightskycam.cameras.images.Image(image_in, meta, filename="test")
 
     with tempfile.TemporaryDirectory() as tmp_dir_:
         tmp_dir = Path(tmp_dir_)
         image.save(tmp_dir, fileformat, cv2params=cv2params)
 
         files = list(tmp_dir.glob("*.tiff"))
-        assert len(files)==1
+        assert len(files) == 1
         assert str(files[0]).endswith("test.tiff")
-        
-    
+
+
 class _FileFormat:
     def __init__(self, fileformat: str, cv2params: typing.Dict[str, typing.Any]):
         self.fileformat: str = fileformat
@@ -87,7 +84,7 @@ class _TestConfig:
         self.expected_shape = expected_shape
         self.src_dir: typing.Optional[Path] = None
         self.dest_dir: typing.Optional[Path] = None
-        
+
 
 params: typing.Tuple[_TestConfig, ...] = (
     _TestConfig(
@@ -140,6 +137,7 @@ params: typing.Tuple[_TestConfig, ...] = (
     ),
 )
 
+
 @pytest.fixture(params=params)
 def postprocess_setup(
     request,
@@ -166,7 +164,7 @@ def postprocess_setup(
         "fileformat": test_config.fileformat.fileformat,
         test_config.fileformat.fileformat: test_config.fileformat.cv2params,
         "steps": steps,
-        "batch_size": 10
+        "batch_size": 10,
     }
     for step in test_config.steps:
         postp_config[step.name] = step.config
@@ -174,7 +172,7 @@ def postprocess_setup(
     config: typing.Dict[str, typing.Any] = {}
     config["main"] = main_config
     config["nightskycam.skythreads.PostprocessThread"] = postp_config
-    
+
     config_getter = nightskycam.configuration_getter.DictConfigurationGetter(config)
 
     config_error = nightskycam.skythreads.PostprocessThread.check_config(config_getter)
@@ -182,7 +180,7 @@ def postprocess_setup(
         raise ValueError(
             f"error in the configuration used for testing process: {config_error}"
         )
-    
+
     instance = nightskycam.skythreads.PostprocessThread(config_getter)
 
     yield instance, test_config

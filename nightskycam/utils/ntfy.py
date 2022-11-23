@@ -186,7 +186,7 @@ class _NtfyStatus:
 
         elif current_status == Status.starting:
             instance.title = f"{name}: starting status"
-            instance.priority = 3
+            instance.priority = ntfy_lite.Priority.DEFAULT
 
         if error:
             messages.append(f"- error: {error}")
@@ -233,11 +233,6 @@ class NtfyStatusChangeCallback(StatusChangeCallback):
             ),
         )
 
-        print()
-        print("NTFY !")
-        print(ntfy_status.priority)
-        print()
-        
         safe_publish(
             self._config_getter,
             ntfy_status.priority,

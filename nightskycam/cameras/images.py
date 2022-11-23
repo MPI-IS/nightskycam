@@ -29,6 +29,14 @@ class Image:
     def add_meta(self, key: str, more_meta: types.Metadata) -> None:
         self.metadata[key] = more_meta
 
+    def delete(self, target_dir: Path) -> None:
+        data_file = target_dir / f"{self.filename}.{self.fileformat}"
+        meta_file = target_dir / f"{self.filename}.toml"
+        if data_file.is_file():
+            data_file.unlink()
+        if meta_file.is_file():
+            meta_file.unlink()
+
     def save(
         self,
         target_dir: Path,

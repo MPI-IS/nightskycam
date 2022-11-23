@@ -21,7 +21,7 @@ def get_remote_dir() -> Path:
     hostname = socket.gethostname()
     date = datetime.datetime.now()
     if date.hour < 12:
-        date_str = (date-datetime.timedelta(days=1)).strftime("%Y_%m_%d")
+        date_str = (date - datetime.timedelta(days=1)).strftime("%Y_%m_%d")
     else:
         date_str = date.strftime("%Y_%m_%d")
     return Path("nightskycam") / hostname / date_str

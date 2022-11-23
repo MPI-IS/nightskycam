@@ -14,7 +14,7 @@ class DummyCamera(Camera):
         return True
 
     def picture(self) -> images.Image:
-        data = np.zeros((self._width, self._height),np.uint16)
+        data = np.zeros((self._width, self._height), np.uint16)
         return images.Image(data, {"type": "dummy_image"})
 
     def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
