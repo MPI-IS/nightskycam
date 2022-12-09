@@ -84,14 +84,14 @@ class _TestConfig:
         self.expected_shape = expected_shape
         self.src_dir: typing.Optional[Path] = None
         self.dest_dir: typing.Optional[Path] = None
-
+        self.latest_dir: typing.Optional[Path] = None
 
 params: typing.Tuple[_TestConfig, ...] = (
     _TestConfig(
         _FileFormat("tiff", {"IMWRITE_TIFF_COMPRESSION": 1}),
         (
             _Step("convert_color", {"conversion_code": "COLOR_BAYER_RGGB2BGR"}),
-            _Step("cv2_resize", {"ratio": 2, "interpolation": "INTER_NEAREST"}),
+            _Step("cv2_resize", {"ratio": 2.0, "interpolation": "INTER_NEAREST"}),
         ),
         (300, 600),
         (150, 300, 3),
@@ -147,9 +147,11 @@ def postprocess_setup(
 
     src_dir_ = tempfile.TemporaryDirectory()
     dest_dir_ = tempfile.TemporaryDirectory()
-
+    latest_dir_ = tempfile.TemporaryDirectory()
+    
     src_dir = Path(src_dir_.name)
     dest_dir = Path(dest_dir_.name)
+    latest_dir = Path(latest_dir_.name)
 
     test_config: _TestConfig = request.param
     test_config.src_dir = src_dir
@@ -161,6 +163,7 @@ def postprocess_setup(
     postp_config: typing.Dict[str, typing.Any] = {
         "src_dir": src_dir,
         "dest_dir": dest_dir,
+        "latest_dir": latest_dir,
         "fileformat": test_config.fileformat.fileformat,
         test_config.fileformat.fileformat: test_config.fileformat.cv2params,
         "steps": steps,

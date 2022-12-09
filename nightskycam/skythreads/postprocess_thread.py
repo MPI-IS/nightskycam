@@ -5,6 +5,7 @@ import typing
 import logging
 import numpy as np
 import multiprocessing
+import ctypes
 from multiprocessing.synchronize import Lock as LockBase
 from pathlib import Path
 from ..locks import Locks
@@ -55,7 +56,7 @@ def _run_postprocess(
     meta = toml.load(meta_file)
 
     # applying the postprocesses
-    postdata = postprocess.apply(data, config, dry_run=False)
+    postdata = postprocess.apply(data, meta, config, dry_run=False)
 
     # updating the metadata
     postmeta: Configuration = {}
@@ -115,25 +116,49 @@ class _Process:
         lock: LockBase,
         sleep: float = 0.2,
         copy_to_latest: bool = True,
+        error_length: int = 1000
     ) -> None:
         self._config = config
         self._lock = lock
         self._running = multiprocessing.Value("i", False)
         self._processed = multiprocessing.Value("i", 0)
         self._remaining = multiprocessing.Value("i", 0)
+        self._error_message = multiprocessing.Array("c",str.encode(" " * error_length))
+        self._error_length = error_length
         self._sleep = sleep
         self._process: typing.Optional[multiprocessing.Process] = None
         self._copy_to_latest = copy_to_latest
-
+        
     def _run(self) -> None:
         self._running.value = True
         while self._running.value:
-            config = self._config.get("PostprocessThread")
-            processed, remaining = _run_all_postprocesses(config, self._copy_to_latest)
-            self._processed.value += processed
-            self._remaining.value = remaining
+            try:
+                config = self._config.get("PostprocessThread")
+            except Exception as e:
+                error = f"configuration error: {e}"
+                error = error[:self._error_length]
+                self._error_message.value = str.encode(error)
+                break
+            try:
+                processed, remaining = _run_all_postprocesses(config, self._copy_to_latest)
+                self._processed.value += processed
+                self._remaining.value = remaining
+            except Exception as e:
+                error = f"processing error: {e}"
+                error = error[:self._error_length]
+                self._error_message.value = str.encode(error)
+                break
             time.sleep(self._sleep)
 
+    def get_error(self)->str:
+        error = self._error_message.value.decode()
+        return error
+
+    def alive(self)->bool:
+        if self._process is None:
+            return False
+        return self._process.is_alive()
+    
     def get_stats(self) -> typing.Tuple[int, int]:
         return self._processed.value, self._remaining.value
 
@@ -146,6 +171,7 @@ class _Process:
             self._running.value = False
             self._process.join()
             self._process = None
+            self._exception = None
 
     def __enter__(self):
         self.start()
@@ -246,7 +272,7 @@ class PostprocessThread(SkyThread):
         filename = "deploy_test"
         testfile = Path(config["src_dir"]) / f"{filename}.npy"
         metafile = Path(config["src_dir"]) / f"{filename}.toml"
-        data = np.zeros((300, 600), np.uint16)
+        data = np.zeros((300, 600), dtype=np.uint16)
         np.save(testfile, data)
         metadata = {"type": "deploy test file"}
         with open(metafile, "w") as f:
@@ -304,6 +330,17 @@ class PostprocessThread(SkyThread):
             self._status.set_misc("steps", ", ".join([str(s) for s in config["steps"]]))
 
         else:
+            try:
+                error = self._process.get_error().strip()
+            except Exception as e:
+                error = f"failed to decode error: {e}"
+            if error:
+                self._process.stop()
+                self._process = None
+                raise Exception(error)
+            if not self._process.alive():
+                self._process = None
+                raise ValueError("the postprocess thread stopped running (reason unknown)")
             treated, remaining = self._process.get_stats()
             self._status.set_misc("treated", str(treated))
             self._status.set_misc("remaining", str(remaining))

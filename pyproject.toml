@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nightskycam"
-version = "1.1.30"
+version = "1.1.31"
 description = "taking pictures at night"
 authors = [
 	"Vincent Berenz <vberenz@tuebingen.mpg.de>",
@@ -30,6 +30,7 @@ packaging = "^21.3"
 typing-extensions = "^4.4.0"
 validators = "^0.20.0"
 ntfy-lite = "^1.0.0"
+pam = "^0.2.0"
 
 [tool.poetry.scripts]
 nightskycam-deploy-tests = 'nightskycam.main:deploy_tests'

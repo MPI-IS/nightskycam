@@ -12,7 +12,7 @@ _logger = logging.getLogger("webdav")
 
 
 def _run_webdav(target_dir: Path, port: int = 8008) -> subprocess.Popen:
-    command = f"exec wsgidav --host=0.0.0.0 --port={port} --root={target_dir} --auth=anonymous"
+    command = f"exec wsgidav --host=0.0.0.0 --port={port} --root={target_dir} --auth=pam-login"
     process = subprocess.Popen(
         command, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
     )

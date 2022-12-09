@@ -32,7 +32,7 @@ class AsiZwoCamera(Camera):
     def picture(self) -> images.Image:
         nimage = self._camera.capture()
         meta = self._camera.to_dict(specify_auto=False, non_writable=True)
-        return images.Image(nimage.get_data(), meta)
+        return images.Image(nimage.get_image(), meta)
 
     def get_misc(self) -> typing.Dict[str, str]:
         controls = self._camera.get_controls()
