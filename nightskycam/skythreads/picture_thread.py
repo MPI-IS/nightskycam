@@ -153,9 +153,13 @@ class PictureThread(SkyThread):
         PictureThreadConfiguration.from_dict(config)
         return None
 
+    def _get_deploy_test_config(self)->Configuration:
+        gnrl_config = self._config_getter.get(self._class_name)
+        return gnrl_config
+    
     def deploy_test(self) -> None:
 
-        gnrl_config = self._config_getter.get(self._class_name)
+        gnrl_config = self._get_deploy_test_config()
         config = typing.cast(
             PictureThreadConfiguration,
             PictureThreadConfiguration.from_dict(gnrl_config),

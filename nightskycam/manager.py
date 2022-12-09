@@ -45,17 +45,22 @@ def deploy_tests(
 
     # checking if each skythread "agrees" with its configuration
     errors: typing.Dict[str, typing.Optional[str]] = {}
+    print()
     for skythread in skythreads:
+        print(f"-- testing {skythread.__class__.__name__}")
         error = skythread.check_config(config_getter)
         if error is not None:
+            print(f"\tconfiguration error: {error}")
             errors[skythread.__class__.__name__] = error
         else:
             try:
                 skythread.deploy_test()
                 errors[skythread.__class__.__name__] = None
+                print("[OK]")
             except Exception as e:
                 errors[skythread.__class__.__name__] = str(e)
-
+                print(f"[ERROR] {e}")
+        print()
     return errors
 
 
