@@ -5,7 +5,7 @@ from . import images
 
 
 class AsiZwoCamera(Camera):
-    def __init__(self, index: int):
+    def __init__(self, index: int = 0):
         self._index = index
         self._camera = camera_zwo_asi.Camera(index)
 

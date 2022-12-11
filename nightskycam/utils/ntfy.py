@@ -36,8 +36,8 @@ def publish(
     try:
         message = message.format("UTF-8")
     except KeyError:
-        message = message.replace('{','')
-        message = message.replace('}','')
+        message = message.replace("{", "")
+        message = message.replace("}", "")
     ntfy_lite.push(topic, title, message=message, tags=tags, priority=priority)
 
 

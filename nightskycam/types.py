@@ -10,7 +10,7 @@ A dictionary providing values of opencv2 save method 'params' key word argument,
 e.g. {"IMWRITE_JPEG_QUALITY":95, "IMWRITE_JPEG_PROGRESSIVE":0}
 """
 
-CV2Params = typing.List[typing.Tuple[int, int]]
+CV2Params = typing.List[int]
 """
 A configuration array for the 'params' key word argument
 of the opencv2 save method,

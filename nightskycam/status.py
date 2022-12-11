@@ -118,13 +118,15 @@ class SkyThreadStatus:
             if key in self._misc:
                 del self._misc[key]
 
-    def _status_change_callbacks(set_status_fn):
+    def _status_change_callbacks(  # type: ignore
+        set_status_fn: typing.Callable[[typing.Any, ...], typing.Any]  # type: ignore
+    ):
         def _c(self, error: typing.Optional[str] = None):
             previous_status = self._status
             if error is None:
-                set_status_fn(self)
+                set_status_fn(self)  # type: ignore
             else:
-                set_status_fn(self, error)
+                set_status_fn(self, error)  # type: ignore
             if self._status != previous_status:
                 for callback in self.callbacks:
                     with self._callbacks_lock:
@@ -141,7 +143,7 @@ class SkyThreadStatus:
 
         return _c
 
-    @_status_change_callbacks
+    @_status_change_callbacks  # type: ignore
     def set_running(self) -> None:
         with self._lock:
             self._error = None
@@ -149,7 +151,7 @@ class SkyThreadStatus:
             if self._started_running is None:
                 self._started_running = datetime.datetime.now()
 
-    @_status_change_callbacks
+    @_status_change_callbacks  # type: ignore
     def set_off(self) -> None:
         with self._lock:
             if self._status == Status.running:

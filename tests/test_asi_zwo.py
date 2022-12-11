@@ -87,9 +87,7 @@ def test_asizwo_thread_execute(configuration_getter):
 
     # counting the number of files in each  folder
     def _nb_files():
-        return [
-            len(list(folder.glob("*"))) for folder in (tmp_dir, target_dir)
-        ]
+        return [len(list(folder.glob("*"))) for folder in (tmp_dir, target_dir)]
 
     # instantiating the thread
     asi_zwo_thread = nightskycam.skythreads.AsiZwoThread(config_getter)
