@@ -58,6 +58,8 @@ def deploy_tests(
                 errors[skythread.__class__.__name__] = None
                 print("[OK]")
             except Exception as e:
+                import traceback
+                print(traceback.format_exc())
                 errors[skythread.__class__.__name__] = str(e)
                 print(f"[ERROR] {e}")
         print()

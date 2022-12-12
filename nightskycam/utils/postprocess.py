@@ -14,9 +14,8 @@ _logger = logging.getLogger("postprocess")
 
 
 def darkframes(
-        image: npt.NDArray, meta: Metadata,
-        h5file: str = "/opt/nightskycam/darkframes.hdf5"
-)->npt.NDArray:
+    image: npt.NDArray, meta: Metadata, h5file: str = "/opt/nightskycam/darkframes.hdf5"
+) -> npt.NDArray:
 
     h5file_ = Path(h5file)
 
@@ -28,7 +27,7 @@ def darkframes(
     except Exception as e:
         raise ValueError(f"failed to open darkframes file {h5file}: {e}")
 
-    return library.substract(image,meta)
+    return library.substract(image, meta["controllables"])
 
 
 def convert_color(
@@ -143,7 +142,7 @@ def apply(
                 _logger.info(f"applying {fn} with arguments {kwargs}")
                 image = supported_fn[fn](image, meta, **kwargs)
             except Exception as e:
-                raise e.__class__(
+                raise RuntimeError(
                     f"failed to apply postprocess method '{fn}' with "
                     f"arguments '{kwargs}': {e}. "
                     f"(input image: shape {image.shape} dtype: {image.dtype})"

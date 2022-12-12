@@ -30,11 +30,7 @@ def test_convert_color_then_size():
     config["cv2_resize"]["interpolation"] = "INTER_NEAREST"
 
     image_in = np.zeros((300, 600), np.uint16)
-    image_out = nightskycam.utils.postprocess.apply(
-        image_in,
-        {},
-        config
-    )
+    image_out = nightskycam.utils.postprocess.apply(image_in, {}, config)
 
     assert image_out.shape == (150, 300, 3)
     assert image_out.dtype == np.uint16
@@ -185,7 +181,7 @@ def postprocess_setup(
         "width": 400,
         "height": 200,
     }
-        
+
     config: typing.Dict[str, typing.Any] = {}
     config["main"] = main_config
     config["nightskycam.skythreads.PostprocessThread"] = postp_config

@@ -17,7 +17,7 @@ from ..configuration_getter import ConfigurationGetter
 from ..types import CV2Format, CV2Params
 from ..cameras.get_camera import get_camera
 
-logger = logging.getLogger("postprocess")
+_logger = logging.getLogger("postprocess")
 
 
 def _get_cv2params(cv2_format: CV2Format) -> CV2Params:
@@ -45,8 +45,12 @@ def _run_postprocess(
     dest_dir = Path(config["dest_dir"])
     latest_dir = Path(config["latest_dir"])
     fileformat = str(config["fileformat"])
-    cv2params = _get_cv2params(config[fileformat])
-
+    cv2params: CV2Params
+    if fileformat != "npy":
+        cv2params = _get_cv2params(config[fileformat])
+    else:
+        cv2params = []
+        
     # the raw image and related toml metadata files
     data_file = src_dir / f"{filename}.npy"
     meta_file = src_dir / f"{filename}.toml"
@@ -66,6 +70,7 @@ def _run_postprocess(
 
     # saving the image
     image = images.Image(postdata, meta, filename)
+    _logger.info(f"saving file {image.filename}.{fileformat} with cv2 parameters {cv2params}")
     image.save(dest_dir, fileformat=fileformat, cv2params=cv2params)
     if copy_to_latest:
         image.filename = "latest"
@@ -222,14 +227,15 @@ class PostprocessThread(SkyThread):
             return "failed to find the required key 'fileformat'"
 
         # the selected format should also have its own configuration
-        # values
-        try:
-            config[fileformat]
-        except KeyError:
-            return str(
-                f"the configuration for the selected fileformat {fileformat} "
-                "could not be found"
-            )
+        # values (except if saving as numpy array)
+        if fileformat != "npy":
+            try:
+                config[fileformat]
+            except KeyError:
+                return str(
+                    f"the configuration for the selected fileformat {fileformat} "
+                    "could not be found"
+                )
 
         # the list of postprocesses to apply
         try:
@@ -270,9 +276,15 @@ class PostprocessThread(SkyThread):
         # getting the configuration
         config = self._config_getter.get("PostprocessThread")
 
+       
         # connecting to the camera and taking
         # a test picture
-        camera = get_camera(self._config_getter.get_global())
+        camera,classname = get_camera(self._config_getter)
+        camera_config = self._config_getter.get(classname)
+
+        if "Exposure" in camera_config:
+            camera_config["Exposure"]=1000
+        camera.active_configure(camera_config)
         image = camera.picture()
 
         # filename for the picture and the metadata
@@ -282,6 +294,7 @@ class PostprocessThread(SkyThread):
         # postprocess thread will look at
         image.save(Path(config["src_dir"]), fileformat="npy", filename=filename)
 
+    
         # starting the postprocess process
         time_start = time.time()
         timeout = 5.0
@@ -292,11 +305,15 @@ class PostprocessThread(SkyThread):
                 treated, _ = p.get_stats()
                 if treated >= 1:
                     break
+                error = p.get_error().strip()
+                if error:
+                    raise RuntimeError(error)
                 if time.time() - time_start > timeout:
                     raise RuntimeError(
                         "postprocess failed: no image file created after a timeout "
                         f"of {timeout}s"
                     )
+                time.sleep(0.01)
 
         # checking the final files are where they are expected
         final_testfile = Path(config["dest_dir"]) / f"{filename}.{config['fileformat']}"
