@@ -15,23 +15,34 @@ class SkyThread:
         config_getter: ConfigurationGetter,
         name: str = "SkyThread",
         tags: typing.Optional[typing.List[str]] = None,
-        ntfy: typing.Optional[bool] = True,
     ) -> None:
         self._config_getter = config_getter
         self._name = name
         self._thread: typing.Optional[threading.Thread] = None
         self._running = False
-        self._status = SkyThreadStatus(name, config_getter, tags=tags, ntfy=ntfy)
+        self._status = SkyThreadStatus(name, config_getter, tags=tags)
 
     def get_status(self):
         return self._status
 
-    def sleep(self, duration: float, precision: float = 0.02) -> None:
+    def sleep(
+        self,
+        duration: float,
+        precision: float = 0.02,
+        interrupt_on_config_change: bool = False,
+    ) -> bool:
+        st_mtime: typing.Optional[float] = self._config_getter.get_st_mtime()
         start = time.time()
         while time.time() - start < duration:
             if not self._running:
                 break
+            if (
+                interrupt_on_config_change
+                and self._config_getter.get_st_mtime() != st_mtime
+            ):
+                return True
             time.sleep(precision)
+        return False
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:

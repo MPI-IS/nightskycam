@@ -8,12 +8,12 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from .configuration_file import configuration_file_folder, get_skythreads
 from .configuration_getter import DynamicConfigurationGetter, FixedConfigurationGetter
-from .skythreads import PictureThread
+from .status import SkyThreadStatus
+from .skythreads import PictureThread, ConfigThread, CommandThread, StatusThread
 from . import manager
 from .utils.ftp import FtpConfig, FtpServer
 from .utils.http import HttpServer
 from .utils.ntfy import NtfyHandler
-from .utils import images
 
 _logger = logging.getLogger("main")
 
@@ -104,7 +104,7 @@ def ftp_test_server():
         print(f"exit with error: {e}")
 
 
-def _deploy_tests():
+def _deploy_tests() -> typing.Dict[str, typing.Optional[str]]:
 
     main_dir = configuration_file_folder()
     if not main_dir.is_dir():
@@ -122,22 +122,40 @@ def _deploy_tests():
 
     config_getter = DynamicConfigurationGetter(config_file)
 
-    manager.deploy_tests(config_getter)
+    results = manager.deploy_tests(config_getter)
+
+    return results
 
 
 def deploy_tests():
 
-    try:
-        print()
-        _deploy_tests()
-    except Exception as e:
-        print("\n* nightskycam deployment tests *failed* :", file=sys.stderr)
-        print(e, file=sys.stderr)
-        print("\n", file=sys.stderr)
-        exit(1)
+    print()
 
-    print("\n* nightskycam deployment tests: success\n")
-    exit(0)
+    OK = "\033[92m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+
+    results = _deploy_tests()
+    errors = False
+    for key, value in results.items():
+        if value is None:
+            print(f"---- {key}: {OK}SUCCESS{ENDC}")
+        else:
+            errors = True
+            print(f"---- {key}: {FAIL}{value}{ENDC}")
+
+    print()
+
+    if not errors:
+        print(f"\n* nightskycam deployment tests: {OK}success{ENDC}\n")
+        exit(0)
+
+    print(f"\n* nightskycam deployment tests {FAIL}*failed*{ENDC}:", file=sys.stderr)
+    errors = {key: value for key, value in results.items() if value is not None}
+    error_msg = "\n".join([f"{k}: {v}" for k, v in errors.items()])
+    print(f"{error_msg}", file=sys.stderr)
+    print("\n", file=sys.stderr)
+    exit(1)
 
 
 def _run(main_control: manager.MainControl):
@@ -174,6 +192,14 @@ def _run(main_control: manager.MainControl):
             )
 
     _set_log(local_log_file, config_getter)
+
+    if "ntfy" in config:
+        from .utils import ntfy
+
+        SkyThreadStatus.callbacks.append(ntfy.NtfyStatusChangeCallback(config_getter))
+        CommandThread.callbacks.append(ntfy.NtfyCommandThreadCallback(config_getter))
+        ConfigThread.callbacks.append(ntfy.NtfyConfigThreadCallback(config_getter))
+        StatusThread.callbacks.append(ntfy.NtfyStatusThreadCallback(config_getter))
 
     _logger.info("starting nightskycam")
     manager.run(main_control, config_getter)
@@ -226,7 +252,7 @@ def display():
 
     skythreads = get_skythreads(config_getter.get_global())
 
-    picture_threads = [st for st in skythreads if issubclass(st,PictureThread)]
+    picture_threads = [st for st in skythreads if issubclass(st, PictureThread)]
 
     for pt in picture_threads:
 
@@ -237,8 +263,6 @@ def display():
         instance._camera.active_configure(gnrl_config)
         instance._camera.upon_active(gnrl_config)
         image_path, metapath = instance._step_active(config, current_dir)
-        print()
-        meta = metapath.read_text()
         print()
         print("saved image: {image_path}")
         print()

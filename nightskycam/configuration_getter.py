@@ -59,6 +59,9 @@ class ConfigurationGetter:
                 return config[key]
         raise KeyError(f"failed to find the key '{suffix}' in the " "configuration")
 
+    def get_st_mtime(self) -> typing.Optional[float]:
+        raise NotImplementedError()
+
 
 def _read_configuration_template(
     path: Path, data: typing.Optional[typing.Dict[str, str]]
@@ -91,6 +94,9 @@ class FixedConfigurationGetter(ConfigurationGetter):
         except Exception as e:
             raise ValueError(f"Failed to parse configuration file {path}: {e}")
 
+    def get_st_mtime(self) -> typing.Optional[float]:
+        return None
+
     def get_global(self) -> Configuration:
         return copy.deepcopy(self._config)
 
@@ -115,6 +121,9 @@ class DynamicConfigurationGetter(ConfigurationGetter):
         self._variable_replacement = variable_replacement
         self._st_mtime: typing.Optional[float] = None
         self._config: typing.Optional[Configuration] = None
+
+    def get_st_mtime(self) -> typing.Optional[float]:
+        return self._st_mtime
 
     def get_global(self) -> GlobalConfiguration:
         with self._lock:
@@ -143,6 +152,9 @@ class DynamicConfigurationGetter(ConfigurationGetter):
 class DictConfigurationGetter(ConfigurationGetter):
     def __init__(self, d: GlobalConfiguration) -> None:
         self._d = d
+
+    def get_st_mtime(self) -> typing.Optional[float]:
+        return None
 
     def get_global(self) -> GlobalConfiguration:
         return copy.deepcopy(self._d)

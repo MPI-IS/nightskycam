@@ -24,11 +24,10 @@ def configuration_getter(
 
     # creating some temporary folders and add
     # them to the configuration
-    dirs = [tempfile.TemporaryDirectory() for _ in range(3)]
-    tmp_dir, final_dir, latest_dir = [d.name for d in dirs]
+    dirs = [tempfile.TemporaryDirectory() for _ in range(2)]
+    tmp_dir, target_dir = [d.name for d in dirs]
     asizwo_config["tmp_dir"] = tmp_dir
-    asizwo_config["final_dir"] = final_dir
-    asizwo_config["latest_dir"] = latest_dir
+    asizwo_config["target_dir"] = target_dir
     asizwo_config["start_record"] = "None"
     asizwo_config["end_record"] = "None"
 
@@ -84,36 +83,29 @@ def test_asizwo_thread_execute(configuration_getter):
     # getting the related folders
     config = config_getter.get("AsiZwoThread")
     tmp_dir = Path(config["tmp_dir"])
-    final_dir = Path(config["final_dir"])
-    latest_dir = Path(config["latest_dir"])
+    target_dir = Path(config["target_dir"])
 
     # counting the number of files in each  folder
     def _nb_files():
-        return [
-            len(list(folder.glob("*"))) for folder in (tmp_dir, final_dir, latest_dir)
-        ]
+        return [len(list(folder.glob("*"))) for folder in (tmp_dir, target_dir)]
 
     # instantiating the thread
     asi_zwo_thread = nightskycam.skythreads.AsiZwoThread(config_getter)
 
     # executing. content of tmp folder is always empty (content is moved during process)
-    # content of final are the latest image and meta data, same for latest
-    asi_zwo_thread._execute(sleep=False)
-    nb_tmp, nb_final, nb_latest = _nb_files()
+    asi_zwo_thread._execute()
+    nb_tmp, nb_final = _nb_files()
     assert nb_tmp == 0
     assert nb_final == 2
-    assert nb_latest == 2
 
     # files accumule in final, but the 2 files are overwritten in latest
-    asi_zwo_thread._execute(sleep=False)
-    nb_tmp, nb_final, nb_latest = _nb_files()
+    asi_zwo_thread._execute()
+    nb_tmp, nb_final = _nb_files()
     assert nb_tmp == 0
     assert nb_final == 4
-    assert nb_latest == 2
 
     # ...
-    asi_zwo_thread._execute(sleep=False)
-    nb_tmp, nb_final, nb_latest = _nb_files()
+    asi_zwo_thread._execute()
+    nb_tmp, nb_final = _nb_files()
     assert nb_tmp == 0
     assert nb_final == 6
-    assert nb_latest == 2

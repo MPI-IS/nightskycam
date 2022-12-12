@@ -19,8 +19,12 @@ def get_remote_dir() -> Path:
     Returns nightskycam / hostname / current date /
     """
     hostname = socket.gethostname()
-    date = datetime.datetime.now().strftime("%Y_%m_%d")
-    return Path("nightskycam") / hostname / date
+    date = datetime.datetime.now()
+    if date.hour < 12:
+        date_str = (date - datetime.timedelta(days=1)).strftime("%Y_%m_%d")
+    else:
+        date_str = date.strftime("%Y_%m_%d")
+    return Path("nightskycam") / hostname / date_str
 
 
 class FtpThreadConfiguration:
@@ -125,10 +129,8 @@ def _upload_files(
 
 
 class FtpThread(SkyThread):
-    def __init__(
-        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
-    ):
-        super().__init__(config_getter, "ftp", tags=["satellite"], ntfy=ntfy)
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__(config_getter, "ftp", tags=["satellite"])
         self._nb_files = 0
         self._uploaded_size = 0
 
@@ -236,12 +238,15 @@ class FtpThread(SkyThread):
         remaining_files: typing.Dict[str, int] = folder_stats.list_nb_files(
             config.local_dir
         )
-        remaining_files_str = ", ".join(
-            [
-                f"{extension}: {nb_files}"
-                for extension, nb_files in remaining_files.items()
-            ]
-        )
+        if remaining_files:
+            remaining_files_str = ", ".join(
+                [
+                    f"{extension}: {nb_files}"
+                    for extension, nb_files in remaining_files.items()
+                ]
+            )
+        else:
+            remaining_files_str = "no files"
         self._status.set_misc("remaining files to upload", remaining_files_str)
         self._status.set_misc(
             "remaining size to upload",

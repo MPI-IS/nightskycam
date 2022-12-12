@@ -171,6 +171,7 @@ def test_success_ftp_skythread(ftp_server):  # noqa: F811
             "passwd": server_config.passwd,
             "local_dir": client_content_dir,
             "upload_every": 1,
+            "batch": 10,
         }
 
         # creating the configuration getter that will

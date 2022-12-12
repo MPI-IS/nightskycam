@@ -1,91 +1,15 @@
-import numpy as np
 import typing
 import time
-import shutil
 import datetime
 import logging
 from pathlib import Path
-import nptyping as npt
 from ..configuration_getter import ConfigurationGetter
 from ..types import Configuration
 from ..skythread import SkyThread
 from ..metadata import Meta
-from ..utils import postprocess
+from ..cameras import images, camera
 
 _logger = logging.getLogger("picture")
-
-
-class Image:
-    def __init__(self) -> None:
-        pass
-
-    def save(self, path: Path) -> None:
-        raise NotImplementedError()
-
-    def display(self, label: str = "") -> None:
-        raise NotImplementedError()
-
-    def get_data(self) -> npt.NDArray:
-        raise NotImplementedError()
-
-    def set_data(self, image: npt.NDArray) -> None:
-        raise NotImplementedError()
-
-
-class DummyImage(Image):
-    def save(self, path: Path) -> None:
-        with open(path, "w+") as f:
-            f.write("dummy image")
-
-    def display(cls, label: str = "") -> None:
-        print("pretend display of dummy image")
-
-    def get_data(self) -> npt.NDArray:
-        return np.array([0])
-
-    def set_data(self, image: npt.NDArray) -> None:
-        pass
-
-
-class Camera(object):
-    def picture(self) -> typing.Tuple[Image, str]:
-        raise NotImplementedError()
-
-    def get_misc(self) -> typing.Dict[str, str]:
-        d: typing.Dict[str, str] = {}
-        return d
-
-    def connected(self) -> bool:
-        raise NotImplementedError()
-
-    def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
-        raise NotImplementedError()
-
-    def inactive_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
-        raise NotImplementedError()
-
-    def upon_active(self, config: typing.Dict[str, typing.Any]) -> None:
-        pass
-
-    def upon_inactive(self, config: typing.Dict[str, typing.Any]) -> None:
-        pass
-
-
-class DummyCamera(Camera):
-    def __init__(self) -> None:
-        super().__init__()
-
-    def connected(self) -> bool:
-        return True
-
-    def picture(self) -> typing.Tuple[Image, str]:
-        return DummyImage(), "dummy_image"
-
-    def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
-        return
-
-    def inactive_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
-        return
 
 
 def _read_time(date_str: str) -> datetime.time:
@@ -101,6 +25,7 @@ def _is_active(
     end_record: typing.Optional[datetime.time],
     now: datetime.time,
 ) -> bool:
+
     if start_record is None:
         return True
     if end_record is None:
@@ -114,6 +39,7 @@ def _is_active(
         # end record: same day
         if time_now > start_record and time_now < end_record:
             return True
+
     return False
 
 
@@ -131,77 +57,20 @@ def _next_picture_time(every: int):
     return midnight + (x + 1) * every
 
 
-def _take_picture(camera) -> typing.Optional[typing.Tuple[Image, str]]:
-    image, metadata = camera.picture()
-    return image, metadata
-
-
-def _save(data: typing.Union[Image, str], path: Path) -> None:
-    if isinstance(data, str):
-        with open(path, "w+") as f:
-            f.write(data)
-    else:
-        data.save(path)
-
-
-def _save_data(
-    tmp_dir: Path,
-    final_dir: Path,
-    latest_dir: typing.Optional[Path],
-    image: Image,
-    metadata: str,
-    filename: str,
-    file_format: str,
-) -> typing.Tuple[Path, Path]:
-
-    # making sure the required folders exist
-    for folder in (tmp_dir, final_dir):
-        folder.mkdir(parents=True, exist_ok=True)
-    if latest_dir:
-        latest_dir.mkdir(parents=True, exist_ok=True)
-
-    # saving the image in tmp_dir, then copy it to
-    # final_dir and latest_dir.
-    image_tmp_path = tmp_dir / f"{filename}.{file_format}"
-    image_final_path = final_dir / f"{filename}.{file_format}"
-    if latest_dir:
-        image_latest_path = latest_dir / f"latest.{file_format}"
-    metadata_tmp_path = tmp_dir / f"{filename}.toml"
-    metadata_final_path = final_dir / f"{filename}.toml"
-    if latest_dir:
-        metadata_latest_path = latest_dir / "latest.txt"
-    _save(image, image_tmp_path)
-    _save(metadata, metadata_tmp_path)
-    if latest_dir:
-        shutil.copy(image_tmp_path, image_latest_path)
-        shutil.copy(metadata_tmp_path, metadata_latest_path)
-    image_tmp_path.rename(image_final_path)
-    metadata_tmp_path.rename(metadata_final_path)
-    return image_final_path, metadata_final_path
-
-
 class PictureThreadConfiguration:
 
     __slots__ = (
-        "tmp_dir",
-        "final_dir",
-        "latest_dir",
+        "target_dir",
         "picture_every",
         "start_record",
         "end_record",
-        "postprocess",
-        "file_format",
     )
 
     def __init__(self):
-        self.tmp_dir: Path = Path("/tmp")
-        self.final_dir: Path = Path("/tmp")
-        self.latest_dir: Path = Path("/tmp")
+        self.target_dir: Path = Path("/tmp")
         self.picture_every: int = -1
         self.start_record: datetime.time = datetime.time(hour=0, minute=0)
         self.end_record: datetime.time = datetime.time(hour=0, minute=0)
-        self.postprocess: typing.Dict[str, typing.Any] = {}
-        self.file_format: str = "tiff"
 
     @classmethod
     def from_dict(cls, config: Configuration) -> object:
@@ -225,12 +94,16 @@ class PictureThreadConfiguration:
                 f"({instance.picture_every}) to an int: {e}"
             )
 
-        paths = ("tmp_dir", "final_dir", "latest_dir")
+        paths = ("target_dir",)
         for path in paths:
             value_ = getattr(instance, path)
             value = Path(value_)
-            if not value.is_dir():
-                raise FileNotFoundError(f"failed to find the directory 'path' {value} ")
+            try:
+                value.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                raise FileNotFoundError(
+                    f"failed to find or create the directory 'path' {value}: {e}"
+                )
             else:
                 setattr(instance, path, value)
 
@@ -243,11 +116,6 @@ class PictureThreadConfiguration:
             for tr in time_records:
                 setattr(instance, tr, _read_time(getattr(instance, tr)))
 
-        if "postprocess" in config:
-            instance.postprocess = config["postprocess"]
-
-        instance.file_format = str(config["file_format"])
-
         return instance
 
 
@@ -256,9 +124,8 @@ class PictureThread(SkyThread):
         self,
         name: str,
         config_getter: ConfigurationGetter,
-        ntfy: typing.Optional[bool] = True,
     ) -> None:
-        super().__init__(config_getter, name, tags=["camera_flash"], ntfy=ntfy)
+        super().__init__(config_getter, name, tags=["camera_flash"])
         full_class_name = str(type(self))
         if full_class_name.endswith("'>"):
             full_class_name = full_class_name[:-2]
@@ -269,13 +136,13 @@ class PictureThread(SkyThread):
         else:
             self._class_name = full_class_name[last_point + 1 :]
         self._nb_pictures = 0
-        self._camera: typing.Optional[Camera] = None
+        self._camera: typing.Optional[camera.Camera] = None
 
     @classmethod
     def get_camera(
         cls,
         config: typing.Mapping[str, typing.Any],
-    ) -> Camera:
+    ) -> camera.Camera:
         raise NotImplementedError()
 
     @classmethod
@@ -286,9 +153,13 @@ class PictureThread(SkyThread):
         PictureThreadConfiguration.from_dict(config)
         return None
 
+    def _get_deploy_test_config(self) -> Configuration:
+        gnrl_config = self._config_getter.get(self._class_name)
+        return gnrl_config
+
     def deploy_test(self) -> None:
 
-        gnrl_config = self._config_getter.get(self._class_name)
+        gnrl_config = self._get_deploy_test_config()
         config = typing.cast(
             PictureThreadConfiguration,
             PictureThreadConfiguration.from_dict(gnrl_config),
@@ -296,38 +167,28 @@ class PictureThread(SkyThread):
 
         camera = self.get_camera(gnrl_config)
         camera.active_configure(gnrl_config)
+        camera.upon_active(gnrl_config)
 
-        filenames = [f"deploy_test_{index}" for index in range(3)]
-        metadatas = [
-            f"deploy test metadata for file {filename}" for filename in filenames
-        ]
+        for filename in [f"deploy_test_{index}" for index in range(3)]:
 
-        for filename, metadata in zip(filenames, metadatas):
+            image: images.Image = camera.picture()
+            image.filename = filename
+            image.save(config.target_dir, fileformat="npy")
 
-            image, image_metadata = camera.picture()
-
-            if config.postprocess:
-                np_image = image.get_data()
-                np_image, postprocess_metadata = postprocess.apply(
-                    np_image, config.postprocess, dry_run=False
+            target_file = config.target_dir / f"{filename}.npy"
+            if not target_file.is_file():
+                raise FileNotFoundError(
+                    "a picture taken by the camera should have been saved "
+                    f"in the file {target_file}. But this file could not be found."
                 )
-                image.set_data(np_image)
-
-            _save_data(
-                config.tmp_dir,
-                config.final_dir,
-                config.latest_dir,
-                image,
-                metadata + "\n" + image_metadata + "\n" + postprocess_metadata,
-                filename,
-                config.file_format,
-            )
+            else:
+                image.delete(config.target_dir)
 
     def _step_active(
         self,
         config: PictureThreadConfiguration,
         destination_folder: typing.Optional[Path] = None,
-    ) -> typing.Optional[typing.Tuple[Path, Path]]:
+    ) -> None:
 
         if self._camera is None:
             return None
@@ -341,58 +202,19 @@ class PictureThread(SkyThread):
         _logger.debug("getting metadata")
         filename, gnrl_metadata = Meta.get()
 
-        _logger.info(f"taking and saving picture {filename}")
-
         # taking the picture and related meta data
-        if self._camera is not None:
-            _logger.debug("taking picture")
-            image, image_metadata = self._camera.picture()
-
-        # postprocess
-        if config.postprocess:
-            np_image = image.get_data()
-            np_image, postprocess_metadata = postprocess.apply(
-                np_image, config.postprocess, dry_run=False
-            )
-            image.set_data(np_image)
-        else:
-            _logger.info("no 'postprocess' key in the configuration, skipping")
-            postprocess_metadata = ""
-
-        # complete meta data
-        metadata = f"{gnrl_metadata}\n{image_metadata}\n{postprocess_metadata}"
-
-        # saving the image and related metadata
-        if destination_folder is None:
-            _logger.debug(f"saving {filename}")
-            image_path, meta_path = _save_data(
-                config.tmp_dir,
-                config.final_dir,
-                config.latest_dir,
-                image,
-                metadata,
-                filename,
-                config.file_format,
-            )
-        else:
-            _logger.debug(f"saving {filename} to {destination_folder}")
-            if not destination_folder.is_dir():
-                raise FileNotFoundError(
-                    f"can not save image in {destination_folder}: folder not found"
-                )
-            image_path, meta_path = _save_data(
-                destination_folder,
-                destination_folder,
-                None,
-                image,
-                metadata,
-                filename,
-                config.file_format,
-            )
+        _logger.info(f"taking picture {filename}")
+        image: images.Image = self._camera.picture()
+        image.filename = filename
+        image.add_meta("general", gnrl_metadata)
+        _logger.debug(f"saving {filename} to {config.target_dir}")
+        image.save(
+            config.target_dir,
+            fileformat="npy",
+        )
 
         self._nb_pictures += 1
         self._status.set_misc("number pictures taken", str(self._nb_pictures))
-        return image_path, meta_path
 
     def _step_inactive(self, config: PictureThreadConfiguration):
         if self._camera is None:
@@ -409,6 +231,16 @@ class PictureThread(SkyThread):
             PictureThreadConfiguration.from_dict(gnrl_config),
         )
         return config
+
+    def _sleep(self, config: PictureThreadConfiguration) -> None:
+        while True:
+            now = time.time()
+            next_time = _next_picture_time(int(config.picture_every))
+            sleep_time = max(0, next_time - now)
+            _logger.debug(f"sleeping for {sleep_time} seconds")
+            interrupted = self.sleep(sleep_time, interrupt_on_config_change=True)
+            if not interrupted:
+                break
 
     def _execute(self):
 
@@ -443,16 +275,5 @@ class PictureThread(SkyThread):
         for name, value in self._camera.get_misc().items():
             self._status.set_misc(name, value)
 
-        # adding postprocess info
-        if config.postprocess:
-            self._status.set_misc(
-                "image postprocess",
-                ", ".join([str(pp) for pp in config.postprocess["order"]]),
-            )
-
-        # sleeping a bit
-        now = time.time()
-        next_time = _next_picture_time(int(config.picture_every))
-        sleep_time = max(0, next_time - now)
-        _logger.debug(f"sleeping for {sleep_time} seconds")
-        self.sleep(sleep_time)
+        # sleeping until next picture due
+        self._sleep(config)

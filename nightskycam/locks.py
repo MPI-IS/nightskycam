@@ -1,5 +1,10 @@
 import typing
-from threading import Lock
+
+# multiprocessing and not threading
+# because of the postprocess thread
+# which spawns a process
+from multiprocessing import Lock
+from multiprocessing.synchronize import Lock as LockBase
 
 
 class Locks:
@@ -7,10 +12,10 @@ class Locks:
     Class maintaining a dictionary of locks.
     """
 
-    _locks: typing.Dict[str, Lock] = {}
+    _locks: typing.Dict[str, LockBase] = {}
 
     @classmethod
-    def get_lock(cls, key: str) -> Lock:
+    def get_lock(cls, key: str) -> LockBase:
         """
         Returns the lock corresponding to the key
         (arbitrary string). If this key does not exists
@@ -20,10 +25,12 @@ class Locks:
         try:
             return cls._locks[key]
         except KeyError:
+            # Lock is not a class, but a function
+            # which returns a LockBase
             lock = Lock()
             cls._locks[key] = lock
             return lock
 
     @classmethod
-    def get_config_lock(cls) -> Lock:
+    def get_config_lock(cls) -> LockBase:
         return cls.get_lock("config")

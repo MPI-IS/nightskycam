@@ -1,19 +1,37 @@
 import types
 import sys
-import toml
 import typing
 import inspect
 import logging
 import cv2
 import numpy as np
 import nptyping as npt
-from ..types import Configuration
+from pathlib import Path
+import h5darkframes as dark
+from ..types import Configuration, Metadata
 
 _logger = logging.getLogger("postprocess")
 
 
+def darkframes(
+    image: npt.NDArray, meta: Metadata, h5file: str = "/opt/nightskycam/darkframes.hdf5"
+) -> npt.NDArray:
+
+    h5file_ = Path(h5file)
+
+    if not h5file_.is_file():
+        raise FileNotFoundError(f"failed to find darkframes file: {h5file}")
+
+    try:
+        library = dark.ImageLibrary(h5file_)
+    except Exception as e:
+        raise ValueError(f"failed to open darkframes file {h5file}: {e}")
+
+    return library.substract(image, meta["controllables"])
+
+
 def convert_color(
-    image: npt.NDArray, conversion_code: str = "COLOR_BAYER_BG2BGR"
+    image: npt.NDArray, meta: Metadata, conversion_code: str = "COLOR_BAYER_BG2BGR"
 ) -> npt.NDArray:
     try:
         code = getattr(cv2, conversion_code)
@@ -32,36 +50,11 @@ def convert_color(
     return r
 
 
-def np_rebin(image: npt.NDArray, ratio: float = 2.0) -> npt.NDArray:
-    def _rebin(
-        arr: npt.NDArray, new_shape: typing.Tuple[int, int], original_type
-    ) -> npt.NDArray:
-        shape = (
-            new_shape[0],
-            arr.shape[0] // new_shape[0],
-            new_shape[1],
-            arr.shape[1] // new_shape[1],
-        )
-        return (
-            arr.reshape(shape)
-            .mean(-1, dtype=original_type)
-            .mean(1, dtype=original_type)
-        )
-
-    new_shape = (
-        int(image.shape[0] / ratio),
-        int(image.shape[1] / ratio),
-    )
-    final_shape = (new_shape[0], new_shape[1], 1)
-    binned_channels = [
-        _rebin(channel, new_shape, image.dtype).reshape(final_shape)
-        for channel in np.dsplit(image, 3)
-    ]
-    return np.concatenate(binned_channels, axis=2)
-
-
 def cv2_resize(
-    image: npt.NDArray, ratio: float = 2.0, interpolation: str = "INTER_NEAREST"
+    image: npt.NDArray,
+    meta: Metadata,
+    ratio: float = 2.0,
+    interpolation: str = "INTER_NEAREST",
 ) -> npt.NDArray:
     if interpolation not in dir(cv2):
         valid = ", ".join([inter for inter in dir(cv2) if inter.startswith("INTER")])
@@ -105,21 +98,21 @@ def _get_kwargs(f: typing.Callable) -> typing.List[str]:
 
 
 def apply(
-    image: npt.NDArray, postconfig: Configuration, dry_run: bool = False
-) -> typing.Tuple[npt.NDArray, str]:
+    image: npt.NDArray, meta: Metadata, postconfig: Configuration, dry_run: bool = False
+) -> npt.NDArray:
 
-    if "order" not in postconfig.keys():
-        _logger.info("no 'order' key in the 'postprocess' configuration, skipping")
-        return image, toml.dumps({"postprocess": None})
+    if "steps" not in postconfig.keys():
+        _logger.info("no 'steps' key in the 'postprocess' configuration, skipping")
+        return image
 
-    order = postconfig["order"]
+    steps = postconfig["steps"]
 
-    if not order:
-        _logger.info("'order' of 'postprocess' is empty: skipping")
+    if not steps:
+        _logger.info("'steps' of 'postprocess' is empty: skipping")
 
     supported_fn = {f.__name__: f for f in _list_functions()}
 
-    for fn in order:
+    for fn in steps:
 
         if fn not in supported_fn:
             valid = ", ".join(supported_fn.keys())
@@ -134,8 +127,8 @@ def apply(
             )
 
         kwargs = postconfig[fn]
-
         supported_kwargs = _get_kwargs(supported_fn[fn])
+
         for kwarg_key in kwargs.keys():
             if kwarg_key not in supported_kwargs:
                 supported = ", ".join(supported_kwargs)
@@ -147,11 +140,12 @@ def apply(
         if not dry_run:
             try:
                 _logger.info(f"applying {fn} with arguments {kwargs}")
-                image = supported_fn[fn](image, **kwargs)
+                image = supported_fn[fn](image, meta, **kwargs)
             except Exception as e:
-                raise e.__class__(
+                raise RuntimeError(
                     f"failed to apply postprocess method '{fn}' with "
-                    f"arguments '{kwargs}': {e}"
+                    f"arguments '{kwargs}': {e}. "
+                    f"(input image: shape {image.shape} dtype: {image.dtype})"
                 )
 
-    return image, toml.dumps(postconfig)
+    return image

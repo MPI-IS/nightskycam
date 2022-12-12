@@ -8,7 +8,6 @@ from .. import configuration_file as cf
 from ..locks import Locks
 from ..types import Configuration
 from ..configuration_getter import ConfigurationGetter
-from ..utils import ntfy
 from ..utils import remote_download
 
 _logger = logging.getLogger("config")
@@ -135,11 +134,17 @@ class ConfigThreadConfiguration:
         return instance
 
 
+class ConfigChangeCallback:
+    def callback(self, new_config: str) -> None:
+        raise NotImplementedError()
+
+
 class ConfigThread(SkyThread):
-    def __init__(
-        self, config_getter: ConfigurationGetter, ntfy: typing.Optional[bool] = True
-    ):
-        super().__init__(config_getter, "configuration", tags=["inbox_tray"], ntfy=ntfy)
+
+    callbacks: typing.List[ConfigChangeCallback] = []
+
+    def __init__(self, config_getter: ConfigurationGetter):
+        super().__init__(config_getter, "configuration", tags=["inbox_tray"])
 
     @classmethod
     def check_config(cls, config_getter: ConfigurationGetter) -> typing.Optional[str]:
@@ -256,13 +261,8 @@ class ConfigThread(SkyThread):
                         downloaded_file.parent, "nightskycam_config.toml"
                     )
                     _logger.info(f"now using configuration file {downloaded_file.name}")
-                    ntfy.safe_publish(
-                        self._config_getter,
-                        3,
-                        "new configuration file",
-                        f"now using configuration file {downloaded_file.name}",
-                        ["new"],
-                    )
+                    for callback in self.callbacks:
+                        callback.callback(downloaded_file.name)
         # sleeping a bit
         _logger.debug(f"sleeping for {config.update_every}")
         self.sleep(config.update_every)

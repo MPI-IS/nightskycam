@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nightskycam"
-version = "1.1.27"
+version = "1.1.32"
 description = "taking pictures at night"
 authors = [
 	"Vincent Berenz <vberenz@tuebingen.mpg.de>",
@@ -25,6 +25,12 @@ Jinja2 = "^3.1.2"
 Pillow = "^9.2.0"
 WsgiDAV = "^4.0.2"
 cheroot = "^8.6.0"
+tomli = "^2.0.1"
+packaging = "^21.3"
+typing-extensions = "^4.4.0"
+validators = "^0.20.0"
+ntfy-lite = "^1.0.0"
+pam = "^0.2.0"
 
 [tool.poetry.scripts]
 nightskycam-deploy-tests = 'nightskycam.main:deploy_tests'

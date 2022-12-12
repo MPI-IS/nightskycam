@@ -93,7 +93,10 @@ def test_list_remote_config_files(http_server):
             f.write("test content")
 
     url = f"http://127.0.0.1:{port}"
-    config_files = nightskycam.configuration_file.list_remote_config_files(url)
+    test_valid = nightskycam.configuration_file.is_valid_configuration_filename
+    config_files = nightskycam.utils.remote_download.list_remote_files(
+        url, 3.0, test_valid
+    )
 
     assert len(config_files) == len(valid_filenames)
     for valid in valid_filenames:
@@ -104,7 +107,7 @@ def test_list_remote_config_files(http_server):
 
     with tempfile.TemporaryDirectory() as local_tmp_dir_:
         local_tmp_dir = Path(local_tmp_dir_)
-        nightskycam.configuration_file.download_file(
+        nightskycam.utils.remote_download.download_file(
             url, best_config_file, local_tmp_dir, remote_tmp_dir
         )
         downloaded_file = local_tmp_dir / best_config_file
