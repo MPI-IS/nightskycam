@@ -14,8 +14,7 @@ _logger = logging.getLogger("postprocess")
 
 def darkframes(
         image: npt.NDArray, meta: Metadata,
-        h5file: str = "/opt/nightskycam/darkframes.hdf5",
-        controllables: typing.List[str] = ["TargetTemp","Exposure"]
+        h5file: str = "/opt/nightskycam/darkframes.hdf5"
 )->npt.NDArray:
 
    
@@ -34,13 +33,6 @@ def darkframes(
         )
 
     lib_controllables = library.controllables()
-    if not tuple(lib_controllables) == tuple(controllables):
-        raise ValueError(
-            f"failed to substract darkframes. The file {h5file} has been created "
-            f"for the controllables {lib_controllables}, but the nightskycam configuration "
-            f"file requests the controllables {controllables}"
-        )
-
 
     try:
         meta_controllables = meta["controllables"]
@@ -48,22 +40,24 @@ def darkframes(
         raise ValueError(
             f"failed to substract darkframes: meta data are missing the key 'controllables'"
         )
-    for controllable in controllables:
-        if controllable not in meta_controllables:
-            raise ValueError(
-                f"failed to substract darkframes. The required controllable {controllable} "
-                f"is not part of the metadata of the image."
-            )
 
-    controls = {controllable:meta_controllables[controllable] for controllable in controllables}
 
     # hacky !
     # for zwo asi camera, the controllable is "TargetTemp", but the value
     # we are interested in is "Temperature". TargetTemp is in degree celcius,
     # but Temperature in "deci" degree celcius
-    if "TargetTemp" in controls:
+    if "TargetTemp" in meta_controllables:
         if "Temperature" in meta_controllables:
-            controls["TargetTemp"] = int( (meta_controllables["Temperature"] / 10.) + 0.5)
+            meta_controllables["TargetTemp"] = int( (meta_controllables["Temperature"] / 10.) + 0.5)
+    
+    for lib_controllable in lib_controllables:
+        if lib_controllable not in meta_controllables:
+            raise ValueError(
+                f"failed to substract darkframes. The required controllable {controllable} "
+                f"is not part of the metadata of the image."
+            )
+
+    controls = {controllable:meta_controllables[controllable] for controllable in lib_controllables}
 
     try:
         darkframe,_ = library.get(controls,dark.GetType.neighbors)
