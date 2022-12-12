@@ -30,7 +30,11 @@ def test_convert_color_then_size():
     config["cv2_resize"]["interpolation"] = "INTER_NEAREST"
 
     image_in = np.zeros((300, 600), np.uint16)
-    image_out = nightskycam.utils.postprocess.apply(image_in, config)
+    image_out = nightskycam.utils.postprocess.apply(
+        image_in,
+        {},
+        config
+    )
 
     assert image_out.shape == (150, 300, 3)
     assert image_out.dtype == np.uint16
@@ -85,6 +89,7 @@ class _TestConfig:
         self.src_dir: typing.Optional[Path] = None
         self.dest_dir: typing.Optional[Path] = None
         self.latest_dir: typing.Optional[Path] = None
+
 
 params: typing.Tuple[_TestConfig, ...] = (
     _TestConfig(
@@ -148,7 +153,7 @@ def postprocess_setup(
     src_dir_ = tempfile.TemporaryDirectory()
     dest_dir_ = tempfile.TemporaryDirectory()
     latest_dir_ = tempfile.TemporaryDirectory()
-    
+
     src_dir = Path(src_dir_.name)
     dest_dir = Path(dest_dir_.name)
     latest_dir = Path(latest_dir_.name)
@@ -172,9 +177,19 @@ def postprocess_setup(
     for step in test_config.steps:
         postp_config[step.name] = step.config
 
+    dummy_config = {
+        "target_dir": src_dir,
+        "picture_every": 1,
+        "start_record": "None",
+        "end_record": "None",
+        "width": 400,
+        "height": 200,
+    }
+        
     config: typing.Dict[str, typing.Any] = {}
     config["main"] = main_config
     config["nightskycam.skythreads.PostprocessThread"] = postp_config
+    config["nightskycam.skythreads.DummyCameraThread"] = dummy_config
 
     config_getter = nightskycam.configuration_getter.DictConfigurationGetter(config)
 

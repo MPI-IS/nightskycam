@@ -12,80 +12,23 @@ from ..types import Configuration, Metadata
 
 _logger = logging.getLogger("postprocess")
 
+
 def darkframes(
         image: npt.NDArray, meta: Metadata,
         h5file: str = "/opt/nightskycam/darkframes.hdf5"
 )->npt.NDArray:
 
-   
     h5file_ = Path(h5file)
-    
+
     if not h5file_.is_file():
-        raise FileNotFoundError(
-            f"failed to find darkframes file: {h5file}"
-        )
+        raise FileNotFoundError(f"failed to find darkframes file: {h5file}")
 
     try:
         library = dark.ImageLibrary(h5file_)
     except Exception as e:
-        raise ValueError(
-            f"failed to open darkframes file {h5file}: {e}"
-        )
+        raise ValueError(f"failed to open darkframes file {h5file}: {e}")
 
-    lib_controllables = library.controllables()
-
-    try:
-        meta_controllables = meta["controllables"]
-    except KeyError:
-        raise ValueError(
-            f"failed to substract darkframes: meta data are missing the key 'controllables'"
-        )
-
-
-    # hacky !
-    # for zwo asi camera, the controllable is "TargetTemp", but the value
-    # we are interested in is "Temperature". TargetTemp is in degree celcius,
-    # but Temperature in "deci" degree celcius
-    if "TargetTemp" in meta_controllables:
-        if "Temperature" in meta_controllables:
-            meta_controllables["TargetTemp"] = int( (meta_controllables["Temperature"] / 10.) + 0.5)
-    
-    for lib_controllable in lib_controllables:
-        if lib_controllable not in meta_controllables:
-            raise ValueError(
-                f"failed to substract darkframes. The required controllable {controllable} "
-                f"is not part of the metadata of the image."
-            )
-
-    controls = {controllable:meta_controllables[controllable] for controllable in lib_controllables}
-
-    try:
-        darkframe,_ = library.get(controls,dark.GetType.neighbors)
-    except Exception as e:
-        raise ValueError(
-            f"failed to get darkframe for controls {controls}: {e}"
-        )
-
-    if darkframe.shape != image.shape:
-        raise ValueError(
-            f"failed to substract darkframe: darkframe is of shape {darkframe.shape} "
-            f"while image is of shape {image.shape}"
-        )
-
-    if darkframe.dtype != image.dtype:
-        raise ValueError(
-            f"failed to substract darkframe: darkframe is of data type {darkframe.dtype} "
-            f"while image is of data type {image.dtype}"
-        )
-
-    im32 = image.astype(np.int32)
-    dark32 = image.astype(np.int32)
-
-    sub32 = im32 - dark32
-    sub32[sub32<0]=0
-
-    return sub32.astype(image.dtype)
-        
+    return library.substract(image,meta)
 
 
 def convert_color(
@@ -109,7 +52,10 @@ def convert_color(
 
 
 def cv2_resize(
-    image: npt.NDArray, meta: Metadata, ratio: float = 2.0, interpolation: str = "INTER_NEAREST"
+    image: npt.NDArray,
+    meta: Metadata,
+    ratio: float = 2.0,
+    interpolation: str = "INTER_NEAREST",
 ) -> npt.NDArray:
     if interpolation not in dir(cv2):
         valid = ", ".join([inter for inter in dir(cv2) if inter.startswith("INTER")])
@@ -153,7 +99,7 @@ def _get_kwargs(f: typing.Callable) -> typing.List[str]:
 
 
 def apply(
-   image: npt.NDArray, meta: Metadata, postconfig: Configuration, dry_run: bool = False
+    image: npt.NDArray, meta: Metadata, postconfig: Configuration, dry_run: bool = False
 ) -> npt.NDArray:
 
     if "steps" not in postconfig.keys():

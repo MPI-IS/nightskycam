@@ -15,7 +15,7 @@ from ..utils import postprocess
 from ..skythread import SkyThread
 from ..configuration_getter import ConfigurationGetter
 from ..types import CV2Format, CV2Params
-
+from ..cameras.get_camera import get_camera
 
 logger = logging.getLogger("postprocess")
 
@@ -25,7 +25,7 @@ def _get_cv2params(cv2_format: CV2Format) -> CV2Params:
     for name, value in cv2_format.items():
         if value != "default":
             try:
-                cv2_attr = getattr(cv2, name)
+                cv2_attr = typing.cast(int, getattr(cv2, name))
             except AttributeError:
                 raise AttributeError(
                     "file format configuration error: "
@@ -116,19 +116,19 @@ class _Process:
         lock: LockBase,
         sleep: float = 0.2,
         copy_to_latest: bool = True,
-        error_length: int = 1000
+        error_length: int = 1000,
     ) -> None:
         self._config = config
         self._lock = lock
         self._running = multiprocessing.Value("i", False)
         self._processed = multiprocessing.Value("i", 0)
         self._remaining = multiprocessing.Value("i", 0)
-        self._error_message = multiprocessing.Array("c",str.encode(" " * error_length))
+        self._error_message = multiprocessing.Array("c", str.encode(" " * error_length))
         self._error_length = error_length
         self._sleep = sleep
         self._process: typing.Optional[multiprocessing.Process] = None
         self._copy_to_latest = copy_to_latest
-        
+
     def _run(self) -> None:
         self._running.value = True
         while self._running.value:
@@ -136,29 +136,31 @@ class _Process:
                 config = self._config.get("PostprocessThread")
             except Exception as e:
                 error = f"configuration error: {e}"
-                error = error[:self._error_length]
+                error = error[: self._error_length]
                 self._error_message.value = str.encode(error)
                 break
             try:
-                processed, remaining = _run_all_postprocesses(config, self._copy_to_latest)
+                processed, remaining = _run_all_postprocesses(
+                    config, self._copy_to_latest
+                )
                 self._processed.value += processed
                 self._remaining.value = remaining
             except Exception as e:
                 error = f"processing error: {e}"
-                error = error[:self._error_length]
+                error = error[: self._error_length]
                 self._error_message.value = str.encode(error)
                 break
             time.sleep(self._sleep)
 
-    def get_error(self)->str:
+    def get_error(self) -> str:
         error = self._error_message.value.decode()
         return error
 
-    def alive(self)->bool:
+    def alive(self) -> bool:
         if self._process is None:
             return False
         return self._process.is_alive()
-    
+
     def get_stats(self) -> typing.Tuple[int, int]:
         return self._processed.value, self._remaining.value
 
@@ -268,15 +270,17 @@ class PostprocessThread(SkyThread):
         # getting the configuration
         config = self._config_getter.get("PostprocessThread")
 
-        # creating a dummy image in the postprocess directory
-        filename = "deploy_test"
-        testfile = Path(config["src_dir"]) / f"{filename}.npy"
-        metafile = Path(config["src_dir"]) / f"{filename}.toml"
-        data = np.zeros((300, 600), dtype=np.uint16)
-        np.save(testfile, data)
-        metadata = {"type": "deploy test file"}
-        with open(metafile, "w") as f:
-            toml.dump(metadata, f)
+        # connecting to the camera and taking
+        # a test picture
+        camera = get_camera(self._config_getter.get_global())
+        image = camera.picture()
+
+        # filename for the picture and the metadata
+        filename: str = "deploy_test"
+
+        # saving the picture to the directory
+        # postprocess thread will look at
+        image.save(Path(config["src_dir"]), fileformat="npy", filename=filename)
 
         # starting the postprocess process
         time_start = time.time()
@@ -340,7 +344,9 @@ class PostprocessThread(SkyThread):
                 raise Exception(error)
             if not self._process.alive():
                 self._process = None
-                raise ValueError("the postprocess thread stopped running (reason unknown)")
+                raise ValueError(
+                    "the postprocess thread stopped running (reason unknown)"
+                )
             treated, remaining = self._process.get_stats()
             self._status.set_misc("treated", str(treated))
             self._status.set_misc("remaining", str(remaining))
