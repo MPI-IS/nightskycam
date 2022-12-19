@@ -50,7 +50,7 @@ def _run_postprocess(
         cv2params = _get_cv2params(config[fileformat])
     else:
         cv2params = []
-        
+
     # the raw image and related toml metadata files
     data_file = src_dir / f"{filename}.npy"
     meta_file = src_dir / f"{filename}.toml"
@@ -70,7 +70,9 @@ def _run_postprocess(
 
     # saving the image
     image = images.Image(postdata, meta, filename)
-    _logger.info(f"saving file {image.filename}.{fileformat} with cv2 parameters {cv2params}")
+    _logger.info(
+        f"saving file {image.filename}.{fileformat} with cv2 parameters {cv2params}"
+    )
     image.save(dest_dir, fileformat=fileformat, cv2params=cv2params)
     if copy_to_latest:
         image.filename = "latest"
@@ -276,14 +278,13 @@ class PostprocessThread(SkyThread):
         # getting the configuration
         config = self._config_getter.get("PostprocessThread")
 
-       
         # connecting to the camera and taking
         # a test picture
-        camera,classname = get_camera(self._config_getter)
+        camera, classname = get_camera(self._config_getter)
         camera_config = self._config_getter.get(classname)
 
         if "Exposure" in camera_config:
-            camera_config["Exposure"]=1000
+            camera_config["Exposure"] = 1000
         camera.active_configure(camera_config)
         image = camera.picture()
 
@@ -294,7 +295,6 @@ class PostprocessThread(SkyThread):
         # postprocess thread will look at
         image.save(Path(config["src_dir"]), fileformat="npy", filename=filename)
 
-    
         # starting the postprocess process
         time_start = time.time()
         timeout = 5.0

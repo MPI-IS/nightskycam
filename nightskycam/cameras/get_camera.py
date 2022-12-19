@@ -9,8 +9,8 @@ from .asizwo_camera import AsiZwoCamera
 
 
 def get_camera(
-        config_getter: ConfigurationGetter, **kwargs
-) -> typing.Tuple[Camera,str]:
+    config_getter: ConfigurationGetter, **kwargs
+) -> typing.Tuple[Camera, str]:
 
     config = config_getter.get_global()
     skythreads: typing.List[typing.Type[SkyThread]] = get_skythreads(config)
@@ -18,11 +18,11 @@ def get_camera(
     for skythread in skythreads:
 
         if "AsiZwoThread" in skythread.__name__:
-            return AsiZwoCamera(**kwargs),"AsiZwoThread"
-            
+            return AsiZwoCamera(**kwargs), "AsiZwoThread"
+
         elif "DummyCameraThread" in skythread.__name__:
-            return DummyCamera(**kwargs),"DummyCameraThread"
-        
+            return DummyCamera(**kwargs), "DummyCameraThread"
+
     picture_threads = "AsiZwoThread, DummyCameraThread"
     raise NotImplementedError(
         "Failed to find a picture thread in the configuration file. "

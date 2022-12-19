@@ -10,6 +10,7 @@ from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import ThreadedFTPServer
 
+from ..meta import Meta
 
 Files = typing.Union[Path, typing.Iterable[Path]]
 _logger = logging.getLogger("ftp")
@@ -209,6 +210,18 @@ class Ftp:
             files = [files]
 
         for index, f in enumerate(files):
+
+            # infering the upload folder from the filename
+            # which should be hostname_date.extension
+            filename = Path(f).stem
+            try:
+                hostname, date_str = Meta.decode(filename)
+            except ValueError:
+                pass
+            else:
+                upload_folder = Path("nightskycam") / hostname / date_str
+                self.cd(upload_folder)
+
             try:
                 total_size += self._upload(f, delete_local)
             except FTPWarning as warning:
