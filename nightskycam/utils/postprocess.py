@@ -22,17 +22,29 @@ def darkframes(
     if not h5file_.is_file():
         raise FileNotFoundError(f"failed to find darkframes file: {h5file}")
 
-    try:
-        library = dark.ImageLibrary(h5file_)
-    except Exception as e:
-        raise ValueError(f"failed to open darkframes file {h5file}: {e}")
+    temperature = int( 0.5 + meta["controllables"]["Temperature"]/10.)
+    exposure = meta["controllables"]["Exposure"]
+    param = (temperature,exposure)
 
-    return library.substract(image, meta["controllables"])
+    with dark.ImageLibrary(h5file_) as il:
 
+        try:
+            neighbors = il.get_interpolation_neighbors(param)
+        except ValueError:
+            neighbors = [il.get_closest(param)]
+        if param in neighbors:
+            darkframe, _ = il.get(param)
+        else:
+            darkframe = il.generate_darkframe(param, neighbors)
+        subimage = dark.substract(image, darkframe)
+
+    return subimage
+    
 
 def convert_color(
     image: npt.NDArray, meta: Metadata, conversion_code: str = "COLOR_BAYER_BG2BGR"
 ) -> npt.NDArray:
+
     try:
         code = getattr(cv2, conversion_code)
     except AttributeError:
