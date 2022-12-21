@@ -10,7 +10,6 @@ from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import ThreadedFTPServer
 
-
 Files = typing.Union[Path, typing.Iterable[Path]]
 _logger = logging.getLogger("ftp")
 
@@ -209,6 +208,7 @@ class Ftp:
             files = [files]
 
         for index, f in enumerate(files):
+
             try:
                 total_size += self._upload(f, delete_local)
             except FTPWarning as warning:

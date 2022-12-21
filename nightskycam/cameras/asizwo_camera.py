@@ -20,9 +20,9 @@ class AsiZwoCamera(Camera):
         self._camera.configure_from_toml(config)
 
     def active_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
+        config["controllables"]["CoolerOn"] = 1
         self._configure(config)
-        if config["controllables"]["CoolerOn"] > 0:
-            self._camera.set_control("CoolerOn", 1)
+        self._camera.set_control("CoolerOn", 1)
 
     def inactive_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         config["controllables"]["CoolerOn"] = 0
