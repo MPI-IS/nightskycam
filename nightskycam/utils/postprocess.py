@@ -39,7 +39,6 @@ def darkframes(
         subimage = dark.substract(image, darkframe)
 
     return subimage
-    
 
 def convert_color(
     image: npt.NDArray, meta: Metadata, conversion_code: str = "COLOR_BAYER_BG2BGR"

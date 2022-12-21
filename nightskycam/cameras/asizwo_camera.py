@@ -23,7 +23,7 @@ class AsiZwoCamera(Camera):
         config["controllables"]["CoolerOn"] = 1
         self._configure(config)
         self._camera.set_control("CoolerOn", 1)
-        
+
     def inactive_configure(self, config: typing.Mapping[str, typing.Any]) -> None:
         config["controllables"]["CoolerOn"] = 0
         self._configure(config)

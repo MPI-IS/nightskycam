@@ -285,6 +285,7 @@ class PostprocessThread(SkyThread):
 
         if "Exposure" in camera_config:
             camera_config["Exposure"] = 1000
+            
         camera.active_configure(camera_config)
         image = camera.picture()
 
