@@ -31,6 +31,9 @@ typing-extensions = "^4.4.0"
 validators = "^0.20.0"
 ntfy-lite = "^1.0.0"
 pam = "^0.2.0"
+astropy = "^5.2"
+geopy = "^2.3.0"
+timezonefinder = "^6.1.9"
 
 [tool.poetry.scripts]
 nightskycam-deploy-tests = 'nightskycam.main:deploy_tests'
