@@ -280,7 +280,14 @@ class PostprocessThread(SkyThread):
 
         # connecting to the camera and taking
         # a test picture
-        camera, classname = get_camera(self._config_getter)
+        try:
+            camera, classname = get_camera(self._config_getter)
+        except NotImplementedError:
+            # no picture thread setup in the configuration,
+            # so the PostprocessThread can not be tested.
+            # exit
+            return
+            
         camera_config = self._config_getter.get(classname)
 
         if "Exposure" in camera_config:
