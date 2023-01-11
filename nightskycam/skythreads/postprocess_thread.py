@@ -287,12 +287,12 @@ class PostprocessThread(SkyThread):
             # so the PostprocessThread can not be tested.
             # exit
             return
-            
+
         camera_config = self._config_getter.get(classname)
 
         if "Exposure" in camera_config:
             camera_config["Exposure"] = 1000
-            
+
         camera.active_configure(camera_config)
         image = camera.picture()
 

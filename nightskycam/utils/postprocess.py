@@ -22,9 +22,9 @@ def darkframes(
     if not h5file_.is_file():
         raise FileNotFoundError(f"failed to find darkframes file: {h5file}")
 
-    temperature = int( 0.5 + meta["controllables"]["Temperature"]/10.)
+    temperature = int(0.5 + meta["controllables"]["Temperature"] / 10.0)
     exposure = meta["controllables"]["Exposure"]
-    param = (temperature,exposure)
+    param = (temperature, exposure)
 
     with dark.ImageLibrary(h5file_) as il:
 
@@ -39,6 +39,7 @@ def darkframes(
         subimage = dark.substract(image, darkframe)
 
     return subimage
+
 
 def convert_color(
     image: npt.NDArray, meta: Metadata, conversion_code: str = "COLOR_BAYER_BG2BGR"

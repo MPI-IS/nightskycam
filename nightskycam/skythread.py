@@ -88,6 +88,8 @@ class SkyThread:
                 self._status.set_running()
                 self._execute()
             except Exception as e:
+                import traceback
+                print(traceback.format_exc())
                 _logger.error(f"{self.__class__.__name__}: {e}")
                 self._status.set_failure(str(e))
                 return

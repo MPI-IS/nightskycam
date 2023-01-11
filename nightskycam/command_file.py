@@ -1,3 +1,5 @@
+import threading
+import time
 import subprocess
 import typing
 import logging
@@ -105,3 +107,46 @@ def execute_new_command(
     filepath.unlink()
 
     return result
+
+
+class CommandRun:
+    def __init__(self, filepath: Path) -> None:
+        self._filepath = filepath
+        self._content: str = self._filepath.read_text()
+        self._result: typing.Optional[CommandResult] = None
+        self._time_start = time.time()
+        self._thread: typing.Optional[threading.Thread] = None
+        self._lock = threading.Lock()
+        with self._lock:
+            self.run()
+
+    def run(self):
+        self._thread = threading.Thread(target=self._run_command)
+        self._thread.start()
+
+    def _run_command(self):
+
+        output = subprocess.run(["/bin/bash", f"{self._filepath}"], capture_output=True)
+
+        with open(_nightskycam_previous_command_file, "w") as f:
+            f.write(self._filepath.name)
+
+        self._result = CommandResult()
+        self._result.filename = self._filepath.name
+        self._result.return_code = output.returncode
+        self._result.stdout = output.stdout.decode("utf-8")
+        self._result.stderr = output.stderr.decode("utf-8")
+
+        self._filepath.unlink()
+
+    def status(self) -> typing.Optional[str]:
+        with self._lock:
+            if self._thread is not None and not self._thread.is_alive():
+                self._thread = None
+            if self._thread is None:
+                return None
+        duration = time.time() - self._time_start
+        return f"running for {duration:.2f} seconds\n{self._content}"
+
+    def result(self) -> typing.Optional[CommandResult]:
+        return self._result

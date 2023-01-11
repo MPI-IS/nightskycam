@@ -33,11 +33,8 @@ def publish(
     message: str,
     tags: typing.List[str],
 ) -> None:
-    try:
-        message = message.format("UTF-8")
-    except KeyError:
-        message = message.replace("{", "")
-        message = message.replace("}", "")
+    message = message.encode(encoding='UTF-8',errors='replace').decode()
+    #message = message.format("UTF-8")
     ntfy_lite.push(topic, title, message=message, tags=tags, priority=priority)
 
 
