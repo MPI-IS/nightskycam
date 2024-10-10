@@ -1,0 +1,42 @@
+[darkframes]
+average_over = 1
+
+[camera.controllables]
+AutoExpMaxExpMS = 30000
+AutoExpMaxGain = 285
+AutoExpTargetBrightness = 100
+BandWidth = "auto"
+CoolerOn = 0
+Exposure = 100000
+Flip = 0
+Gain = 121
+HighSpeedMode = 0
+MonoBin = 0
+Offset = 8
+PowerLedBright = 0
+TargetTemp = 20
+WB_B = 95
+WB_R = 52
+
+[camera.roi]
+start_x = 0
+start_y = 0
+width = 4144
+height = 2822
+bins = 1
+type = "raw16"
+
+[darkframes.controllables.TargetTemp]
+min = 20
+max = 20
+step = 0
+threshold = 1
+timeout = 600
+
+[darkframes.controllables.Exposure]
+min = 100000
+max = 200000
+step = 100000
+threshold = 1
+timeout = 0.1
+

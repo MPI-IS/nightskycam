@@ -1,0 +1,21 @@
+# TO EDIT !
+
+nightskycam = "the_hostname"
+websockets_url = "wss://127.0.0.1:443/ws"
+root_directory = "/nightskycam/images"
+ftp_host = "127.0.0.1"
+ftp_port = 21
+ftp_username = "ftp_username"
+ftp_password = "ftp_password"
+command_password = "server_command_password"
+
+# uncomment and edit if have an API key from
+# meteosource.com
+# weather_api_key = "my_meteosource_api_key"
+
+# uncomment and edit if you setup a certificate file
+# cert_file = "/usr/local/share/ca-certificates/<mycertificatefilename>.crt"
+
+# uncomment if you use a shared secret token
+# for communication with the server
+# token = "mysecrettoken"

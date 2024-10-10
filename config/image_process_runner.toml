@@ -1,0 +1,17 @@
+frequency = 1.0
+source_folder = "{{ root_directory }}/process"
+destination_folder = "{{ root_directory }}/ftp"
+latest_folder = "{{ root_directory }}/latest"
+
+# uncomment if debayer is to be used.
+#debayer = "COLOR_BAYER_BG2BGR"
+
+resize = 1.0
+resize_interpolation = "INTER_NEAREST"
+fileformat = "jpeg"
+eight_bits = true
+jpeg_quality = 98
+
+# uncomment if you generated a darkframes file for your
+# camera.
+# darkframes = "{{ root_directory }}/darkframes/darkframes.hdf5"

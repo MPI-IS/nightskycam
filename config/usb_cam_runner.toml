@@ -1,0 +1,17 @@
+frequency =  0.013
+start_time = "20:00"
+end_time = "07:00"
+use_sun_alt = true
+use_weather = false
+cloud_cover_threshold = 70
+destination_folder = "{{ root_directory }}/process"
+cam_index = "last"
+CAP_PROP_FRAME_WIDTH = 640
+CAP_PROP_FRAME_HEIGHT = 380
+CAP_PROP_FRAME_BRIGHTNESS = 0
+CAP_PROP_FRAME_CONTRAST = 0
+CAP_PROP_FRAME_SATURATION = 64
+CAP_PROP_HUE = 0
+CAP_PROP_GAIN = 1
+CAP_PROP_EXPOSURE = 156
+nightskycam = "{{ nightskycam }}"

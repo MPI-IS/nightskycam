@@ -1,0 +1,8 @@
+frequency = 0.1
+sleep = false
+start_sleep = "09:00"
+stop_sleep = "19:00"
+wait_ftp = true
+ftp_folder = "{{ root_directory }}/ftp"
+tty = "/dev/ttyS0"
+

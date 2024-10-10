@@ -1,0 +1,11 @@
+frequency = 1.0
+nightskycam = "{{ nightskycam }}"
+url = "{{ websockets_url }}/outgoing/config/{{ nightskycam }}"
+
+# uncomment if you setup  a certificate file
+# (see vars.toml)
+# cert_file = "{{ cert_file }}"
+
+# uncomment if you use a shared secret token
+# for communication with the server
+# token = "{{ token }}"

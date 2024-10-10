@@ -1,0 +1,3 @@
+frequency = 0.00333
+folder = "{{ root_directory}}/ftp"
+threshold_MB = 500 

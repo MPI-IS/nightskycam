@@ -1,0 +1,7 @@
+frequency = 0.1
+weather_api_key = "{{ weather_api_key }}"
+nightskycam = "{{ nightskycam }}"
+
+# update with the place_id of the
+# system. See: https://www.meteosource.com/documentation#find_places
+place_id = "yourlocation"

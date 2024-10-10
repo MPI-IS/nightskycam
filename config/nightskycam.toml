@@ -1,0 +1,87 @@
+[asi_cam_runner]
+class_runner = "nightskycam.asicams.runner.AsiCamRunner"
+class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+args = ["asi_cam_runner.toml"]
+[asi_cam_runner.kwargs]
+"vars" =  "vars.toml"
+
+# Comment asi_cam_runner above and uncomment below
+# if you use a USB webcam
+#
+#[usb_cam_runner]
+#class_runner = "nightskycam.usbcams.runner.USBCamRunner"
+#class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+#args = ["usb_cam_runner.toml"]
+#[usb_cam_runner.kwargs]
+#"vars" =  "vars.toml"
+
+[image_process_runner]
+class_runner = "nightskycam.process.runner.ImageProcessRunner"
+class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+args = ["image_process_runner.toml"]
+[image_process_runner.kwargs]
+"vars" =  "vars.toml"
+
+[space_keeper_runner]
+class_runner = "nightskycam.space_keeper.runner.SpaceKeeperRunner"
+class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+args = ["space_keeper_runner.toml"]
+[space_keeper_runner.kwargs]
+"vars" =  "vars.toml"
+
+# Uncomment if you setup a FTP server you'd like to upload
+# pictures to
+#
+#[ftp_runner]
+#class_runner = "nightskycam.ftp.runner.FtpRunner"
+#class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+#args = ["ftp_runner.toml"]
+#[ftp_runner.kwargs]
+#"vars" =  "vars.toml"
+
+# Uncomment if you setup a www.meteosource.com API key 
+# in vars.toml
+#
+#[location_info_runner]
+#class_runner = "nightskycam.location_info.runner.LocationInfoRunner"
+#class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+#args = ["location_info_runner.toml"]
+#[location_info_runner.kwargs]
+#"vars" =  "vars.toml"
+
+# Uncomment if you setup a sleepypi 2 add-on
+#
+#[sleepy_pi_runner]
+#class_runner = "nightskycam.sleepypi.runner.SleepyPiRunner"
+#class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+#args = ["sleepypi.toml"]
+#[sleepy_pi_runner.kwargs]
+#"vars" = "vars.toml"
+
+# Uncomment if you setup a web-server
+#
+#
+#[command_runner]
+#class_runner = "nightskycam.commands.runner.CommandRunner"
+#class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+#args = ["commands.toml"]
+#[command_runner.kwargs]
+#"vars" =  "vars.toml"
+#
+#[status_runner]
+#class_runner = "nightskycam.status.runner.StatusRunner"
+#class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+#args = ["status_runner.toml"]
+#[status_runner.kwargs]
+#"vars" =  "vars.toml"
+#
+#[config_update_runner]
+#class_runner = "nightskycam.config_update.runner.ConfigUpdateRunner"
+#class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+#args = ["config_update_runner.toml"]
+#[config_update_runner.kwargs]
+#"vars" =  "vars.toml"
+
+
+
+
