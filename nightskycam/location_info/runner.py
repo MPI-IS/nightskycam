@@ -11,7 +11,6 @@ from typing import List, Optional
 from nightskycam.utils.location_info import LocationInfo, get_location_info
 from nightskycam.utils.night import is_night
 from nightskycam.utils.weather import Weather, get_weather
-from nightskycam_images.constants import TIME_FORMAT
 from nightskycam_serialization.status import LocationInfoRunnerEntries
 from nightskyrunner.config_getter import ConfigGetter
 from nightskyrunner.runner import ThreadRunner, status_error
@@ -20,6 +19,10 @@ from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
 from .ip import get_IPs
+
+
+# must be the same value as in nightskycam_images.constants.TIME_FORMAT
+TIME_FORMAT: str = "%H:%M:%S"
 
 
 @status_error
