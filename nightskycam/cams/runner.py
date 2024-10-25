@@ -19,7 +19,7 @@ from typing import Dict, List, Optional, Tuple
 from nightskycam_serialization.status import CamRunnerEntries
 from nightskyrunner.config import Config
 from nightskyrunner.config_getter import ConfigGetter
-from nightskyrunner.runner import ThreadRunner, status_error
+from nightskyrunner.runner import ProcessRunner, status_error
 from nightskyrunner.shared_memory import SharedMemory
 from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
@@ -32,7 +32,7 @@ from .utils import get_local_info, is_active, read_config, time_window_str
 
 
 @status_error
-class CamRunner(ThreadRunner):
+class CamRunner(ProcessRunner):
     """
     Runner for taking pictures when "suitable" to do so.
 
