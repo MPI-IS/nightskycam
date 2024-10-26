@@ -271,7 +271,10 @@ def get_local_info(
         tnow = time.time()
     if tnow - ts > deprecation:
         return None, None, None
-    return tuple(
-        memory[key]  # type: ignore
-        for key in ("night", "weather", "cloud_cover")
-    )
+    try:
+        return tuple(
+            memory[key]  # type: ignore
+            for key in ("night", "weather", "cloud_cover")
+        )
+    except KeyError:
+        return None, None, None
