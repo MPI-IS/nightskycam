@@ -5,14 +5,11 @@ Module for testing [nightskycam.cams.runner.CamRunner]() and related utilities.
 import datetime
 import tempfile
 import time
+from contextlib import suppress
 from pathlib import Path
 from typing import Generator, List
 
 import pytest
-from nightskyrunner.config import Config
-from nightskyrunner.shared_memory import SharedMemory
-from nightskyrunner.status import State, wait_for_status
-
 from nightskycam.cams import utils
 from nightskycam.cams.runner import CamRunner
 from nightskycam.dummycams.runner import DummyCamRunner
@@ -21,6 +18,9 @@ from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
                                           exception_on_error_state,
                                           get_manager, runner_started,
                                           wait_for)
+from nightskyrunner.config import Config
+from nightskyrunner.shared_memory import SharedMemory
+from nightskyrunner.status import State, wait_for_status
 
 
 @pytest.fixture
@@ -211,6 +211,17 @@ def _set_local_info(
     memory["cloud_cover"] = cloud_cover
     memory["time_stamp"] = time_stamp
 
+    
+def _set_failed_local_info(
+        time_stamp: float
+) -> None:
+    memory = SharedMemory.get(LocationInfoRunner.sm_key)
+    with suppress(KeyError):
+        del memory["night"]
+        del memory["weather"]
+        del memory["cloud_cover"]
+    memory["time_stamp"] = time_stamp
+    
 
 def test_get_local_info(reset_memory) -> None:
     """
@@ -363,3 +374,29 @@ def test_wait_duration() -> None:
 
     assert sleep1 == pytest.approx(1.0 - 5000 * 1e-6)
     assert sleep2 == pytest.approx(1.0 - 601 * 1e-6)
+
+    
+def test_no_local_info(tmp_dir)->None:
+
+    time_stamp = time.time()
+    _set_failed_local_info(time_stamp)
+
+    config: Config = {
+        "frequency": 5.0,
+        "destination_folder": str(tmp_dir),
+        "start_time": "19:30",
+        "end_time": "08:00",
+        "use_sun_alt": True,
+        "use_weather": True,
+        "cloud_cover_threshold": 70,
+        "nightskycam": "test_system",
+        "pause": False,
+    }
+
+    with get_manager((DummyCamRunner, config)):
+        wait_for(runner_started, True, args=(DummyCamRunner.__name__,))
+        wait_for_status(DummyCamRunner.__name__, State.running, timeout=2.0)
+        exception_on_error_state(DummyCamRunner.__name__)
+
+
+    

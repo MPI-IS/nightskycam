@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nightskycam"
-version = "0.1.3"
+version = "0.1.4"
 description = "taking pictures at night"
 authors = ["Vincent Berenz <vberenz@tuebingen.mpg.de>"]
 packages = [{ include = "nightskycam" }]
