@@ -287,6 +287,25 @@ class CamRunner(ProcessRunner):
         if not camera.is_connected():
             raise RuntimeError("the camera does not seem to be connected")
 
+        # we update the status twice. Here: before taking picture
+        self._update_status(
+            frequency,
+            active,
+            reason,
+            start,
+            end,
+            use_sun_alt,
+            use_weather,
+            night,
+            cloud_cover,
+            cloud_cover_threshold,
+            weather,
+            config_issues,
+            camera_info,
+            pause,
+        )
+
+        
         if bad_weather:
             # bad weather means that pictures are not taken because
             # of cloud coverage. We create a toml meta data file
@@ -329,7 +348,7 @@ class CamRunner(ProcessRunner):
                 )
                 self._nb_pictures += 1
 
-        # The status of this runner is quite complicated...
+        # we update the status twice. Here: after taking picture
         self._update_status(
             frequency,
             active,
