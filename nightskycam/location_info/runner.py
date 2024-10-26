@@ -169,7 +169,7 @@ class LocationInfoRunner(ThreadRunner):
             )
 
         # latitude, longitude, country, timezone
-        info: Optional[LocationInfo]
+        info: Optional[LocationInfo] = None
         try:
             info = get_location_info(place_id, api_key)
             if info:
