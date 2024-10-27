@@ -23,6 +23,7 @@ from nightskycam_serialization.status import CommandRunnerEntries
 from nightskyrunner.status import Level, Status
 
 from .websocket_manager import WebsocketReceiverMixin, WebsocketSenderMixin
+from .ftp import FtpConfig, get_ftp
 
 _running_command: Optional["Command"] = None
 
@@ -286,11 +287,20 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         url: str,
         token: Optional[str],
         cert_file: Optional[Path],
+        ftp_config: Optional[FtpConfig]
     ) -> None:
         # sending to server output of executed commands
         # (for informing users of the django server)
 
         result = finished_command.get_result()
+
+        stdout = result.stdout.strip()
+
+        if ftp_config and Path(stdout).is_file():
+            with get_ftp(ftp_config, ftp_config.folder) as ftp:
+                uploaded_size = ftp.upload(Path(stdout),True)
+            result.stdout = Path(stdout).name
+            
         message = serialize_command_result(result, token=token)
         self.send(url, message, status=status, cert_file=cert_file)
 
@@ -298,6 +308,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         self,
         command_file: Path,
         url: str,
+        ftp_config: Optional[FtpConfig]=None,
         token: Optional[str] = None,
         cert_file: Optional[Path] = None,
         status: Optional[Status] = None,
@@ -382,8 +393,14 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
                             f"finished command {_running_command.command_id} "
                             + f"with exit-code {_running_command.exit_code}",
                         )
+
                     self._inform_server(
-                        _running_command, status, url, token, cert_file
+                        _running_command,
+                        status = status,
+                        url = url,
+                        token = token,
+                        cert_file = cert_file,
+                        ftp_config = ftp_config
                     )
                     try:
                         del commands[_running_command.command_id]

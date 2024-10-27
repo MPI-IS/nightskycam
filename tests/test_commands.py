@@ -98,7 +98,7 @@ def test_execute_one_command(correct_command, tmp_dir, commandDB) -> None:
         # this report in queue_received
         time_start = time.time()
         while time.time() - time_start < 2.0:
-            commandDB.iterate(command_file, uri, token)
+            commandDB.iterate(command_file, uri, token=token)
             if not queue_receive.empty():
                 break
         if queue_receive.empty():
@@ -145,7 +145,7 @@ def test_incorrect_token(tmp_dir, commandDB) -> None:
         with pytest.raises(IncorrectToken):
             time_start = time.time()
             while time.time() - time_start < 2.0:
-                commandDB.iterate(command_file, uri, token)
+                commandDB.iterate(command_file, uri, token=token)
                 if not queue_receive.empty():
                     break
 

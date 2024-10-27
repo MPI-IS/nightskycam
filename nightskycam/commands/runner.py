@@ -11,7 +11,7 @@ from nightskyrunner.runner import ProcessRunner, status_error
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
 from ..utils.commands import CommandDB
-
+from ..utils.ftp import FtpConfig
 
 @status_error
 class CommandRunner(ProcessRunner):
@@ -44,6 +44,32 @@ class CommandRunner(ProcessRunner):
         super().__init__(name, config_getter, interrupts, core_frequency)
         self._command_db: Optional[CommandDB] = None
 
+    def _get_ftp_config(self,config)->Optional[FtpConfig]:
+
+        try:
+            ftp_host = config["ftp_host"]
+        except KeyError:
+            return None
+        remote_subdir_: Optional[str]
+        remote_subdir: Optional[Path]
+        try:
+            remote_subdir_ = str(config["ftp_remote_subdir"])
+        except KeyError:
+            remote_subdir_ = None
+        if remote_subdir_ in ("None", ""):
+            remote_subdir = None
+        else:
+            remote_subdir = Path(str(remote_subdir_))
+        nightskycam = str(config["nightskycam"])
+        remote_subdir = remote_subdir / nightskycam / "snapshot"
+        return FtpConfig(
+            str(config["ftp_username"]),
+            str(config["ftp_password"]),
+            str(config["ftp_host"]),
+            int(config["ftp_port"]),  # type: ignore
+            folder=remote_subdir,
+        )
+        
     def on_exit(self) -> None:
         # closing websockets
         if self._command_db is not None:
@@ -78,6 +104,8 @@ class CommandRunner(ProcessRunner):
                 f"failed to find the public certificate: {cert_file}"
             )
 
+        ftp_config = self._get_ftp_config(config)
+
         if self._command_db:
             # "iterating" command db, i.e.
             # read new commands, monitor the command currently
@@ -86,6 +114,7 @@ class CommandRunner(ProcessRunner):
             status_dict: CommandRunnerEntries = self._command_db.iterate(
                 command_file,
                 url,
+                ftp_config = ftp_config,
                 token=token,
                 cert_file=cert_file,
                 status=self._status,

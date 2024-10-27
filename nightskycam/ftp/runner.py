@@ -17,7 +17,7 @@ from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 from ..utils.filename import sort_by_night
 from ..utils.formating import bits_to_human
 from ..utils.folder_stats import list_nb_files
-from .ftp import FtpConfig, get_ftp
+from ..utils.ftp import FtpConfig, get_ftp
 
 
 def _get_remote_dir(remote_subdir: str, date: str, system_name: str) -> Path:
