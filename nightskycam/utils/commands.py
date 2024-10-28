@@ -6,6 +6,7 @@ It is used by the [nightskycam.runner.CommandRunner]() runner.
 """
 
 import base64
+import errno
 import subprocess
 import threading
 from contextlib import contextmanager
@@ -291,9 +292,16 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
 
         stdout = result.stdout.strip()
 
-        if ftp_config and Path(stdout).is_file():
+        stdout_file: Optional[Path]
+        try:
+            stdout_file = Path(stdout)
+        except OSError as e:
+            # some strings can not be "cast" as path
+            stdout_file = None
+            
+        if ftp_config and stdout_file.is_file():
             with get_ftp(ftp_config, ftp_config.folder) as ftp:
-                uploaded_size = ftp.upload(Path(stdout), True)
+                uploaded_size = ftp.upload(stdout_file, True)
             result.stdout = Path(stdout).name
 
         message = serialize_command_result(result, token=token)
