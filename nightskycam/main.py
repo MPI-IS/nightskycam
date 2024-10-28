@@ -10,7 +10,6 @@ from nightskyrunner.log import set_logging
 from nightskyrunner.manager import Manager
 from nightskyrunner.status import Level
 
-
 _logger = logging.Logger("executable")
 
 
@@ -45,9 +44,7 @@ def _get_config_path() -> Path:
 
 
 def _run(config_path: Path) -> None:
-    _logger.info(
-        f"starting nightskycam using the configuration file {config_path}"
-    )
+    _logger.info(f"starting nightskycam using the configuration file {config_path}")
     manager_config_getter = DynamicTomlManagerConfigGetter(config_path)
     with Manager(manager_config_getter, name="nightskycam"):
         while True:

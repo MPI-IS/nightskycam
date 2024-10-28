@@ -6,16 +6,15 @@ from pathlib import Path
 from typing import Generator, List
 
 import pytest
-from nightskyrunner.config import Config
-from nightskyrunner.shared_memory import SharedMemory
-
-from nightskycam.utils.ftp import FtpConfig, FtpServer, get_ftp
 from nightskycam.ftp.runner import FtpRunner, _UploadSpeed
 from nightskycam.utils.filename import get_filename
+from nightskycam.utils.ftp import FtpConfig, FtpServer, get_ftp
 from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
                                           exception_on_error_state,
                                           get_manager, runner_started,
                                           wait_for)
+from nightskyrunner.config import Config
+from nightskyrunner.shared_memory import SharedMemory
 
 
 @pytest.fixture

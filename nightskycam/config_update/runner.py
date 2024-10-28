@@ -181,9 +181,7 @@ class ConfigUpdateRunner(ThreadRunner, WebsocketReceiverMixin):
 
         for message in messages:
             # which runner should be updated with which config
-            runner_name, new_config = deserialize_config_update(
-                message, token=token
-            )
+            runner_name, new_config = deserialize_config_update(message, token=token)
 
             # getting the current configuration used by this runner.
             # This is for checking the differences with the new confuration.
@@ -207,10 +205,7 @@ class ConfigUpdateRunner(ThreadRunner, WebsocketReceiverMixin):
                         tomli_w.dump(new_config, f)
                 except Exception as e:
                     self._status.set_issue(
-                        str(
-                            "failed to update configuration "
-                            f"for {runner_name}: {e}"
-                        )
+                        str("failed to update configuration " f"for {runner_name}: {e}")
                     )
                     error = str(e)
                 else:
@@ -221,9 +216,7 @@ class ConfigUpdateRunner(ThreadRunner, WebsocketReceiverMixin):
                     # "computing" the differences between the current and the
                     # new config (will be shared in the status, to keep the
                     # user updated via the website)
-                    differences = self._config_differences(
-                        current_config, new_config
-                    )
+                    differences = self._config_differences(current_config, new_config)
 
                     # sharing the path the new config file with the runner, which will
                     # overwrite its own configuration file.
@@ -231,9 +224,7 @@ class ConfigUpdateRunner(ThreadRunner, WebsocketReceiverMixin):
 
                 # keeping all configuration update in memory (so that they can be
                 # shared in the status)
-                self._track_updates(
-                    runner_name, error=error, differences=differences
-                )
+                self._track_updates(runner_name, error=error, differences=differences)
 
         # sharing the configuration updateds in the status
         self._update_status()

@@ -7,9 +7,6 @@ from pathlib import Path
 from typing import Generator, List
 
 import pytest
-from nightskyrunner.config import Config
-from nightskyrunner.status import State, wait_for_status
-
 from nightskycam.space_keeper.runner import SpaceKeeperRunner
 from nightskycam.space_keeper.utils import (convert_mb_to_bits, file_size,
                                             files_to_delete, free_space, to_GB)
@@ -17,6 +14,8 @@ from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
                                           exception_on_error_state,
                                           get_manager, runner_started,
                                           wait_for)
+from nightskyrunner.config import Config
+from nightskyrunner.status import State, wait_for_status
 
 """ Module for testing the runner SpaceKeeper and its related utils """
 

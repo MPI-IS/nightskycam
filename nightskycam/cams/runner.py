@@ -87,15 +87,10 @@ class CamRunner(ProcessRunner):
         self._last_picture_filename = ""
 
     @staticmethod
-    def _wait_duration(
-        frequency: float, now: datetime.time
-    ) -> Tuple[float, float]:
+    def _wait_duration(frequency: float, now: datetime.time) -> Tuple[float, float]:
         period = 1.0 / frequency
         now_seconds = (
-            now.hour * 3600
-            + now.minute * 60
-            + now.second
-            + now.microsecond * 1e-6
+            now.hour * 3600 + now.minute * 60 + now.second + now.microsecond * 1e-6
         )
         nb_pictures_since_midnight = int(now_seconds / period)
         next_picture_time = period * (nb_pictures_since_midnight + 1)
@@ -166,15 +161,11 @@ class CamRunner(ProcessRunner):
         # is not available
         issues: List[str] = []
         if use_sun_alt and night is None:
-            issues.append(
-                "should use sun altitude, but information not available"
-            )
+            issues.append("should use sun altitude, but information not available")
 
         # report issue: should use weather, but weather information not available
         if use_weather and cloud_cover is None:
-            issues.append(
-                "should use sun weather, but information not available"
-            )
+            issues.append("should use sun weather, but information not available")
 
         # period at which pictures are taken
         period = 1.0 / frequency
@@ -208,9 +199,7 @@ class CamRunner(ProcessRunner):
         # sharing the status dictionary
         self._status.entries(status_dict)
 
-    def get_camera(
-        self, active: bool, config: Config
-    ) -> Tuple[Camera, List[str]]:
+    def get_camera(self, active: bool, config: Config) -> Tuple[Camera, List[str]]:
         """
         Arguments
           active: true if the camera will need to take picture
@@ -305,7 +294,6 @@ class CamRunner(ProcessRunner):
             pause,
         )
 
-        
         if bad_weather:
             # bad weather means that pictures are not taken because
             # of cloud coverage. We create a toml meta data file

@@ -273,8 +273,7 @@ def get_local_info(
         return None, None, None
     try:
         return tuple(
-            memory[key]  # type: ignore
-            for key in ("night", "weather", "cloud_cover")
+            memory[key] for key in ("night", "weather", "cloud_cover")  # type: ignore
         )
     except KeyError:
         return None, None, None

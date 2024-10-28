@@ -13,6 +13,7 @@ from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 from ..utils.commands import CommandDB
 from ..utils.ftp import FtpConfig
 
+
 @status_error
 class CommandRunner(ProcessRunner):
     """
@@ -44,7 +45,7 @@ class CommandRunner(ProcessRunner):
         super().__init__(name, config_getter, interrupts, core_frequency)
         self._command_db: Optional[CommandDB] = None
 
-    def _get_ftp_config(self,config)->Optional[FtpConfig]:
+    def _get_ftp_config(self, config) -> Optional[FtpConfig]:
 
         try:
             ftp_host = config["ftp_host"]
@@ -69,7 +70,7 @@ class CommandRunner(ProcessRunner):
             int(config["ftp_port"]),  # type: ignore
             folder=remote_subdir,
         )
-        
+
     def on_exit(self) -> None:
         # closing websockets
         if self._command_db is not None:
@@ -114,7 +115,7 @@ class CommandRunner(ProcessRunner):
             status_dict: CommandRunnerEntries = self._command_db.iterate(
                 command_file,
                 url,
-                ftp_config = ftp_config,
+                ftp_config=ftp_config,
                 token=token,
                 cert_file=cert_file,
                 status=self._status,

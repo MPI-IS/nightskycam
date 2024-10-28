@@ -14,16 +14,14 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 import tomli
 import tomli_w
-from nightskycam_serialization.command import (
-    CommandResult,
-    deserialize_command,
-    serialize_command_result,
-)
+from nightskycam_serialization.command import (CommandResult,
+                                               deserialize_command,
+                                               serialize_command_result)
 from nightskycam_serialization.status import CommandRunnerEntries
 from nightskyrunner.status import Level, Status
 
-from .websocket_manager import WebsocketReceiverMixin, WebsocketSenderMixin
 from .ftp import FtpConfig, get_ftp
+from .websocket_manager import WebsocketReceiverMixin, WebsocketSenderMixin
 
 _running_command: Optional["Command"] = None
 
@@ -134,9 +132,7 @@ class Command:
 
     def _run(self) -> None:
         try:
-            output = subprocess.run(
-                self.command, capture_output=True, shell=True
-            )
+            output = subprocess.run(self.command, capture_output=True, shell=True)
         except Exception as e:
             self.error = str(e)
             self.exit_code = "1"
@@ -200,8 +196,7 @@ def read_commands(
     with open(command_path, "rb") as f:
         all_commands = tomli.load(f)
     commands = {
-        int(key): Command.from_dict(value)
-        for key, value in all_commands.items()
+        int(key): Command.from_dict(value) for key, value in all_commands.items()
     }
     yield commands
     updated_commands = {
@@ -287,7 +282,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         url: str,
         token: Optional[str],
         cert_file: Optional[Path],
-        ftp_config: Optional[FtpConfig]
+        ftp_config: Optional[FtpConfig],
     ) -> None:
         # sending to server output of executed commands
         # (for informing users of the django server)
@@ -298,9 +293,9 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
 
         if ftp_config and Path(stdout).is_file():
             with get_ftp(ftp_config, ftp_config.folder) as ftp:
-                uploaded_size = ftp.upload(Path(stdout),True)
+                uploaded_size = ftp.upload(Path(stdout), True)
             result.stdout = Path(stdout).name
-            
+
         message = serialize_command_result(result, token=token)
         self.send(url, message, status=status, cert_file=cert_file)
 
@@ -308,7 +303,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         self,
         command_file: Path,
         url: str,
-        ftp_config: Optional[FtpConfig]=None,
+        ftp_config: Optional[FtpConfig] = None,
         token: Optional[str] = None,
         cert_file: Optional[Path] = None,
         status: Optional[Status] = None,
@@ -356,9 +351,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
                 status_dict["queued_commands"] = command_ids
 
             # reading new commands from websockets
-            new_commands: List[Command] = self._get_commands(
-                url, token, cert_file
-            )
+            new_commands: List[Command] = self._get_commands(url, token, cert_file)
             for command in new_commands:
                 if command.command_id not in commands.keys():
                     commands[command.command_id] = command
@@ -375,9 +368,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
                     _running_command.start()
                     _running_command._started = True
                     if status:
-                        status_dict["active_command"] = str(
-                            _running_command.command_id
-                        )
+                        status_dict["active_command"] = str(_running_command.command_id)
                         status.activity(
                             f"running command {_running_command.command_id}"
                         )
@@ -396,11 +387,11 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
 
                     self._inform_server(
                         _running_command,
-                        status = status,
-                        url = url,
-                        token = token,
-                        cert_file = cert_file,
-                        ftp_config = ftp_config
+                        status=status,
+                        url=url,
+                        token=token,
+                        cert_file=cert_file,
+                        ftp_config=ftp_config,
                     )
                     try:
                         del commands[_running_command.command_id]
@@ -413,9 +404,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
                 status_dict["active_command"] = "-"
             if self._executed_commands and status:
                 # ... there is an active command
-                status_dict["executed_commands"] = list(
-                    self._executed_commands
-                )
+                status_dict["executed_commands"] = list(self._executed_commands)
             return status_dict
 
 

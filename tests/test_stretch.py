@@ -1,6 +1,5 @@
 import numpy as np
 import pytest
-
 from nightskycam.process import stretch
 
 _shape = (2822, 4144, 3)

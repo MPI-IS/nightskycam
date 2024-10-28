@@ -5,7 +5,6 @@ Module for testing [nightskycam.process]()
 from typing import Union
 
 import numpy as np
-
 from nightskycam.process.bits_conversion import to_8bits
 from nightskycam.process.debayer import debayer
 from nightskycam.process.resize import resize

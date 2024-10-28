@@ -1,5 +1,4 @@
 import pytest
-
 from nightskycam.utils.location_info import _read_coord
 
 

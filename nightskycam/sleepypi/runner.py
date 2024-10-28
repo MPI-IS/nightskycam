@@ -2,11 +2,11 @@
 Module defining SleepyPiRunner.
 """
 
-from datetime import timedelta
 import datetime
 import subprocess
 import time
 from datetime import datetime as dtime
+from datetime import timedelta
 from pathlib import Path
 from typing import Optional, Tuple
 
@@ -125,9 +125,7 @@ def _should_sleep(
     if time_now is None:
         time_now = _now()
 
-    min_to_sleep, reason = _time_to_sleep(
-        start_sleep, stop_sleep, time_now=time_now
-    )
+    min_to_sleep, reason = _time_to_sleep(start_sleep, stop_sleep, time_now=time_now)
 
     if min_to_sleep < 0:
         if not _ftp_empty(ftp_folder):
@@ -284,9 +282,7 @@ class SleepyPiRunner(ThreadRunner):
                     sleep_blocked = True
 
         # informing users about what is going on.
-        self._update_status(
-            config, should_sleep_, sleep_blocked, info, min_to_sleep
-        )
+        self._update_status(config, should_sleep_, sleep_blocked, info, min_to_sleep)
 
         # should sleep, but runner just started, so not sleeping yet
         if sleep_blocked and should_sleep_:

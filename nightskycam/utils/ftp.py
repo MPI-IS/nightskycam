@@ -4,10 +4,6 @@ Used by [nightskycam.ftp.runner.FtpRunner]() and
 related unit-tests.
 """
 
-from typing import Tuple
-from typing import Optional
-from typing_extensions import TypeAlias
-from typing import Union
 import logging
 import os
 import threading
@@ -15,10 +11,12 @@ import typing
 from ftplib import FTP, FTP_TLS
 from pathlib import Path
 from socket import gaierror
+from typing import Optional, Tuple, Union
 
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import ThreadedFTPServer
+from typing_extensions import TypeAlias
 
 Files = typing.Union[Path, typing.Iterable[Path]]
 _logger = logging.getLogger("ftp")
@@ -281,9 +279,7 @@ class Ftp:
 
         # file to upload not found
         if not path.is_file():
-            raise FileNotFoundError(
-                f"FTP upload: failed to find " f"local file {path}"
-            )
+            raise FileNotFoundError(f"FTP upload: failed to find " f"local file {path}")
 
         # getting the size of the file, will be used to check
         # the file has been properly uploaded.
@@ -376,8 +372,7 @@ class Ftp:
         """
         if not local_path.is_dir():
             raise FileNotFoundError(
-                f"Failed to upload the content of {local_path}: "
-                "folder not found"
+                f"Failed to upload the content of {local_path}: " "folder not found"
             )
 
         files: typing.List[Path] = []
@@ -388,13 +383,9 @@ class Ftp:
                 files.extend(local_path.glob("*." + extension))
         else:
             if glob is None:
-                files = list(
-                    filter(lambda x: x.is_file(), local_path.glob("*"))
-                )
+                files = list(filter(lambda x: x.is_file(), local_path.glob("*")))
             else:
-                files = list(
-                    filter(lambda x: x.is_file(), local_path.glob(glob))
-                )
+                files = list(filter(lambda x: x.is_file(), local_path.glob(glob)))
 
         if batch_size and len(files) > batch_size:
             files = files[:batch_size]
