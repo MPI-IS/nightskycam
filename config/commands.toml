@@ -10,3 +10,11 @@ password = "{{ command_password}} "
 # uncomment if you use a shared secret token
 # for communication with the server
 # token = "{{ token }}"
+
+# uncomment if you use the website's snapshot/focus interface
+# ftp_host = "{{ ftp_host }}"
+# ftp_port = "{{ ftp_port }}"
+# ftp_username = "{{ ftp_username }}"
+# ftp_password = "{{ ftp_password }}"
+# ftp_remote_subdir = "nightskycam"
+# nightskycam = "{{ nightskycam }}"
