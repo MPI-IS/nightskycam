@@ -97,13 +97,17 @@ def _process(
     # darkframe substraction
     darkframes_file: Optional[Path]
     try:
-        darkframes_file = Path(str(config["darkframes"]))
+        df = str(config["darkframes"])
+        if not df or df=="None":
+            darkframes_file = None
+        else:
+            darkframes_file = Path(df)
     except KeyError:
         darkframes_file = None
     if darkframes_file and not darkframes_file.is_file():
         raise FileNotFoundError(
             "requested to perform darkframes substraction, but "
-            f"file {darkframes} could not be found"
+            f"file {darkframes_file} could not be found"
         )
     if darkframes_file:
         with open(meta_file, "rb") as f:

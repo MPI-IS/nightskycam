@@ -290,6 +290,18 @@ def test_runner(tmp_dirs) -> None:
             "jpeg_quality": 95,
             "darkframes": _darkframes_file(),
         },
+        {
+            "frequency": 5.0,
+            "stretch": "AsinhStretch",
+            "debayer": "COLOR_BAYER_BG2BGR",
+            "resize": 1.0,
+            "resize_interpolation": "INTER_NEAREST",
+            "eight_bits": True,
+            "fileformat": "jpeg",
+            "jpeg_quality": 95,
+            "darkframes": "None",
+        },
+
     ]
     base_config = {
         "frequency": 5.0,
