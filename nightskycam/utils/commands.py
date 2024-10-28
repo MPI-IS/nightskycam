@@ -293,16 +293,18 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         stdout = result.stdout.strip()
 
         stdout_file: Optional[Path]
+        stdout_file_exists = False
         try:
             stdout_file = Path(stdout)
+            stdout_file_exists = stdout_file.is_file()
         except OSError as e:
             # some strings can not be "cast" as path
             stdout_file = None
             
-        if ftp_config and stdout_file.is_file():
+        if ftp_config and stdout_file_exists:
             with get_ftp(ftp_config, ftp_config.folder) as ftp:
                 uploaded_size = ftp.upload(stdout_file, True)
-            result.stdout = Path(stdout).name
+            result.stdout = stdout_file.name
 
         message = serialize_command_result(result, token=token)
         self.send(url, message, status=status, cert_file=cert_file)
