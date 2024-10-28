@@ -144,7 +144,7 @@ class LocationInfoRunner(ThreadRunner):
             command = "cat /sys/class/thermal/thermal_zone0/temp"
             output = subprocess.run(command, capture_output=True, shell=True)
             location["cpu_temperature"] = str(
-                float(output.stdout.decode("utf-8")) / 1000.0
+                int(float(output.stdout.decode("utf-8")) / 1000.0)
             )
         except Exception as e:
             errors.append(f"failed to read the temperature of the CPU: {e}")
