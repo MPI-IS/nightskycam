@@ -13,8 +13,6 @@ from typing import Any, Dict, Generator, List, Optional, Tuple
 
 import numpy as np
 import pytest
-from nightskyrunner.config import Config
-
 from nightskycam.process.runner import (ImageProcessRunner, _process,
                                         _save_files)
 from nightskycam.process.stretch import stretch_methods
@@ -24,6 +22,7 @@ from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
                                           exception_on_error_state,
                                           get_manager, get_runner_error,
                                           runner_started, wait_for)
+from nightskyrunner.config import Config
 
 
 def _darkframes_file() -> Path:

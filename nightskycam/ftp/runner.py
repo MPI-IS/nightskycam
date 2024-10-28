@@ -15,9 +15,9 @@ from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
 from ..utils.filename import sort_by_night
-from ..utils.formating import bits_to_human
 from ..utils.folder_stats import list_nb_files
-from .ftp import FtpConfig, get_ftp
+from ..utils.formating import bits_to_human
+from ..utils.ftp import FtpConfig, get_ftp
 
 
 def _get_remote_dir(remote_subdir: str, date: str, system_name: str) -> Path:
@@ -164,10 +164,7 @@ class FtpRunner(ThreadRunner):
         total = sum(list(self._nb_files.values()))
 
         files_to_upload = ", ".join(
-            [
-                f"{filetype}: {nb}"
-                for filetype, nb in list_nb_files(local_dir).items()
-            ]
+            [f"{filetype}: {nb}" for filetype, nb in list_nb_files(local_dir).items()]
         )
 
         latest_uploaded = str(files[0].stem) if files else ""
@@ -247,9 +244,7 @@ class FtpRunner(ThreadRunner):
                 )
 
                 # uploading data
-                uploaded_size = self._upload_files(
-                    ftp_config, remote_dir, files
-                )
+                uploaded_size = self._upload_files(ftp_config, remote_dir, files)
                 self._upload_speed.add(uploaded_size)
                 self._update_status(files, uploaded_size, local_dir)
             else:

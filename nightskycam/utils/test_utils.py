@@ -7,35 +7,19 @@ import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path, PosixPath
-from typing import (
-    Any,
-    Callable,
-    Generator,
-    Iterable,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import (Any, Callable, Generator, Iterable, Optional, Tuple, Type,
+                    TypeVar, Union, cast)
 
 import tomli_w
 from nightskyrunner.config import Config
-from nightskyrunner.config_toml import (
-    DynamicTomlConfigGetter,
-    DynamicTomlManagerConfigGetter,
-    TomlRunnerFactory,
-)
+from nightskyrunner.config_toml import (DynamicTomlConfigGetter,
+                                        DynamicTomlManagerConfigGetter,
+                                        TomlRunnerFactory)
 from nightskyrunner.factories import BasicRunnerFactory, RunnerFactory
 from nightskyrunner.manager import FixedRunners, Manager
 from nightskyrunner.runner import Runner
-from nightskyrunner.status import (
-    NoSuchStatusError,
-    State,
-    Status,
-    wait_for_status,
-)
+from nightskyrunner.status import (NoSuchStatusError, State, Status,
+                                   wait_for_status)
 
 from nightskycam.utils.websocket_manager import websocket_server
 
@@ -210,9 +194,7 @@ def get_manager(
 
     # constructing the runner factory, i.e. the factories the manager will use
     # to instantiate the runners
-    runner_factories = [
-        _get_runner_factory(rcc) for rcc in runner_class_configs
-    ]
+    runner_factories = [_get_runner_factory(rcc) for rcc in runner_class_configs]
 
     # the manager config getter, i.e. the class the manager will use to configure
     # itself, i.e. selecting which runner to instantiate and start.
@@ -331,9 +313,7 @@ def wait_for(
         time.sleep(time_sleep)
 
 
-def websocket_connection_test(
-    runner_class: Type[Runner], port, config: Config
-) -> None:
+def websocket_connection_test(runner_class: Type[Runner], port, config: Config) -> None:
     """
     It is assumed 'runner_class' is a runner requiring an active websocket connection.
     This function will test that the runner is in a 'running' state when a
@@ -419,9 +399,7 @@ class ConfigTester:
         should be in 'supported_values' (otherwise a KeyError is raised).
     """
 
-    def __init__(
-        self, supported_values: Config, not_supported_values: Config
-    ) -> None:
+    def __init__(self, supported_values: Config, not_supported_values: Config) -> None:
         self._supported = supported_values
         self._not_supported = not_supported_values
         for key in not_supported_values:
@@ -437,9 +415,7 @@ class ConfigTester:
         """
         return set(self._not_supported.keys())
 
-    def get_config(
-        self, unsupported: Union[str, Iterable[str]] = tuple()
-    ) -> Config:
+    def get_config(self, unsupported: Union[str, Iterable[str]] = tuple()) -> Config:
         """
         If unsupported is empty, returns the 'supported_values' configuration.
         If unsupported is not empty, returns the 'supported_values' configuration
@@ -482,9 +458,7 @@ def _get_status(runner: Union[str, Type[Runner]]) -> str:
         runner_ = runner.__name__
     else:
         runner_ = str(runner)
-    return ",".join(
-        [f"{k}: {v}" for k, v in Status.retrieve(runner_).get().items()]
-    )
+    return ",".join([f"{k}: {v}" for k, v in Status.retrieve(runner_).get().items()])
 
 
 def configuration_test(
@@ -508,9 +482,7 @@ def configuration_test(
         with get_manager((runner_class, config_file)):
             # waiting for the runner to start and go into a "running" state
             # (no error because the config is correct)
-            if not wait_for_status(
-                runner_name, State.running, timeout=timeout
-            ):
+            if not wait_for_status(runner_name, State.running, timeout=timeout):
                 raise RuntimeError(
                     f"{runner_class.__name__} did not switch to running state "
                     "when starting with a suitable configuration. "
@@ -522,9 +494,7 @@ def configuration_test(
                 config_tester.set_config(config_file, unsupported=config_key)
 
                 # the runner should switch to an error state
-                if not wait_for_status(
-                    runner_name, State.error, timeout=timeout
-                ):
+                if not wait_for_status(runner_name, State.error, timeout=timeout):
                     raise RuntimeError(
                         f"{runner_class.__name__} did not switch to error state "
                         f"upon unsupported configuration value for key {config_key}. "
@@ -535,9 +505,7 @@ def configuration_test(
                 config_tester.set_config(config_file, unsupported=tuple())
 
                 # runner should return to a "running" state.
-                if not wait_for_status(
-                    runner_name, State.running, timeout=timeout
-                ):
+                if not wait_for_status(runner_name, State.running, timeout=timeout):
                     raise RuntimeError(
                         f"{runner_class.__name__} did not switch to running state "
                         "when switching back to a suitable configuration. "

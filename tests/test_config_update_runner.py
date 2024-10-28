@@ -8,22 +8,16 @@ from typing import Generator
 
 import pytest
 import tomli_w
+from nightskycam.config_update.runner import ConfigUpdateRunner
+from nightskycam.tests.runner import TestRunner
+from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
+                                          get_manager, runner_started,
+                                          wait_for, websocket_connection_test)
+from nightskycam.utils.websocket_manager import websocket_server
 from nightskycam_serialization.config import serialize_config_update
 from nightskyrunner.config import Config
 from nightskyrunner.shared_memory import SharedMemory
 from nightskyrunner.status import State, Status, wait_for_status
-
-from nightskycam.config_update.runner import ConfigUpdateRunner
-from nightskycam.tests.runner import TestRunner
-from nightskycam.utils.test_utils import (
-    ConfigTester,
-    configuration_test,
-    get_manager,
-    runner_started,
-    wait_for,
-    websocket_connection_test,
-)
-from nightskycam.utils.websocket_manager import websocket_server
 
 URL = "127.0.0.1"
 PORT = 8765
@@ -148,9 +142,7 @@ def test_config_update_runner(tmp_dir) -> None:
             queue_receive, queue_send, nb_clients = ws_server
             wait_for(nb_clients, 1)
             for runner_class in (ConfigUpdateRunner, TestRunner):
-                wait_for_status(
-                    runner_class.__name__, State.running, timeout=2.0
-                )
+                wait_for_status(runner_class.__name__, State.running, timeout=2.0)
 
             # having the websocket server sending a new config.
             # TestRunner will write config["value"] in its status.
@@ -172,9 +164,7 @@ def test_config_update_runner(tmp_dir) -> None:
 
 
 @pytest.mark.parametrize("incorrect_token", ["nothtetoken", None])
-def test_config_update_runner_incorrect_token(
-    incorrect_token, tmp_dir
-) -> None:
+def test_config_update_runner_incorrect_token(incorrect_token, tmp_dir) -> None:
     """
     Testing ConfigUpdateRunner switches to error mode when receiveing
     messages with incorrect token.
@@ -202,9 +192,7 @@ def test_config_update_runner_incorrect_token(
             queue_receive, queue_send, nb_clients = ws_server
             wait_for(nb_clients, 1)
             for runner_class in (ConfigUpdateRunner, TestRunner):
-                wait_for_status(
-                    runner_class.__name__, State.running, timeout=2.0
-                )
+                wait_for_status(runner_class.__name__, State.running, timeout=2.0)
 
             # having the websocket server sending a new config.
             # TestRunner will write config["value"] in its status.
@@ -220,6 +208,4 @@ def test_config_update_runner_incorrect_token(
             queue_send.put(config_update_message)
             # waiting for the runner to switch to error mode
             # due to incorrect token
-            wait_for_status(
-                ConfigUpdateRunner.__name__, State.error, timeout=2.0
-            )
+            wait_for_status(ConfigUpdateRunner.__name__, State.error, timeout=2.0)

@@ -12,16 +12,9 @@ from nightskyrunner.runner import ThreadRunner, status_error
 from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
-from .utils import (
-    bits_to_human,
-    convert_mb_to_bits,
-    DiskSpaceInfo,
-    disk_space_info,
-    disk_space_info_str,
-    files_to_delete,
-    folder_content,
-    to_GB,
-)
+from .utils import (DiskSpaceInfo, bits_to_human, convert_mb_to_bits,
+                    disk_space_info, disk_space_info_str, files_to_delete,
+                    folder_content, to_GB)
 
 
 @status_error
@@ -95,9 +88,7 @@ class SpaceKeeperRunner(ThreadRunner):
 
         # if disk is too full, to_delete will list the files to
         # delete
-        to_delete = files_to_delete(
-            Path(folder), convert_mb_to_bits(threshold_MB)
-        )
+        to_delete = files_to_delete(Path(folder), convert_mb_to_bits(threshold_MB))
 
         self._status.entries(
             SpaceKeeperRunnerEntries(

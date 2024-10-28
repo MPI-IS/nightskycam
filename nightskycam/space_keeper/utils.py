@@ -3,10 +3,9 @@ Utility functions for
 [nightskycam.space_keeper.runner.SpaceKeeperRunner](space keeper runner).
 """
 
-from typing import TypedDict
 import os
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, TypedDict
 
 import psutil
 

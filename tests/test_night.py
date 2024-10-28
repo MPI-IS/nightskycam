@@ -15,17 +15,13 @@ class _Tuebingen:
 
 def _today_at_1pm() -> datetime:
     today = datetime.now().date()
-    today_at_1pm = datetime(
-        year=today.year, month=today.month, day=today.day, hour=13
-    )
+    today_at_1pm = datetime(year=today.year, month=today.month, day=today.day, hour=13)
     return today_at_1pm
 
 
 def _today_at_11pm() -> datetime:
     today = datetime.now().date()
-    today_at_11pm = datetime(
-        year=today.year, month=today.month, day=today.day, hour=23
-    )
+    today_at_11pm = datetime(year=today.year, month=today.month, day=today.day, hour=23)
     return today_at_11pm
 
 

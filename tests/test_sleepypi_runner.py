@@ -1,4 +1,3 @@
-from nightskycam.sleepypi.runner import _time_to_sleep, _sleep_duration
 import datetime
 import tempfile
 import time
@@ -6,28 +5,19 @@ from pathlib import Path
 from typing import Generator, Optional, Tuple
 
 import pytest
+from nightskycam.sleepypi.runner import (SleepyPiRunner, _duration_to_event,
+                                         _should_sleep, _sleep_duration,
+                                         _time_to_sleep)
+from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
+                                          exception_on_error_state,
+                                          get_manager, runner_started,
+                                          wait_for)
 from nightskyrunner.config import Config
 from nightskyrunner.status import State, wait_for_status
 
-from nightskycam.sleepypi.runner import (
-    SleepyPiRunner,
-    _duration_to_event,
-    _should_sleep,
-)
-from nightskycam.utils.test_utils import (
-    ConfigTester,
-    configuration_test,
-    exception_on_error_state,
-    get_manager,
-    runner_started,
-    wait_for,
-)
-
 
 @pytest.fixture
-def tmp_dirs(
-    request, scope="function"
-) -> Generator[Tuple[Path, Path], None, None]:
+def tmp_dirs(request, scope="function") -> Generator[Tuple[Path, Path], None, None]:
     """
     Fixture yielding a temp directory and a temp file
     """
@@ -68,9 +58,7 @@ class _SleepyPiRunnerConfig:
             }
 
     @classmethod
-    def get_config_tester(
-        cls, ftp_folder: Path, tty_file: Path
-    ) -> ConfigTester:
+    def get_config_tester(cls, ftp_folder: Path, tty_file: Path) -> ConfigTester:
         return ConfigTester(
             cls.get_config(ftp_folder, tty_file, unsupported=False),
             cls.get_config(ftp_folder, tty_file, unsupported=True),
@@ -84,9 +72,7 @@ def test_configuration(tmp_dirs) -> None:
     """
     ftp_folder, tty_file = tmp_dirs
 
-    config_tester = _SleepyPiRunnerConfig.get_config_tester(
-        ftp_folder, tty_file
-    )
+    config_tester = _SleepyPiRunnerConfig.get_config_tester(ftp_folder, tty_file)
     configuration_test(SleepyPiRunner, config_tester, timeout=30.0)
 
 

@@ -18,14 +18,8 @@ from nightskyrunner.runner import ProcessRunner, status_error
 from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
-from ..utils.file_saving import (
-    extend_meta,
-    get_cv2_config,
-    read_files,
-    save,
-    save_npy,
-    supported_file_formats,
-)
+from ..utils.file_saving import (extend_meta, get_cv2_config, read_files, save,
+                                 save_npy, supported_file_formats)
 from .bits_conversion import to_8bits
 from .darkframes import darkframes
 from .debayer import debayer
@@ -153,9 +147,7 @@ def _process(
         ratio = float(config["resize"])  # type: ignore
         interpolation = str(config["resize_interpolation"])
         if ratio != 1.0:
-            extra_meta.append(
-                f"resize with ratio {config['resize']} ({interpolation})"
-            )
+            extra_meta.append(f"resize with ratio {config['resize']} ({interpolation})")
             image = resize(image, ratio, interpolation=interpolation)
 
     # 8 bits conversion
@@ -308,9 +300,7 @@ class ImageProcessRunner(ProcessRunner):
             # Note: in nightskycam.utils.file_saving, functions save and save_npy,
             # image files are created before meta data toml file.
             origin = source_folder / f"{filename}.toml"
-            destination = (
-                Path(config["destination_folder"]) / f"{filename}.toml"
-            )
+            destination = Path(config["destination_folder"]) / f"{filename}.toml"
             origin.rename(destination)
 
         for filename in npy_files:

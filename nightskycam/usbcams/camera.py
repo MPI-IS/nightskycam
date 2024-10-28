@@ -102,9 +102,7 @@ class USBCamera(Camera):
         elif config["cam_index"] == "last":
             self._camera = get_last_camera_index()
         else:
-            self._camera = cv2.VideoCapture(
-                int(config["cam_index"])
-            )  # type: ignore
+            self._camera = cv2.VideoCapture(int(config["cam_index"]))  # type: ignore
         if self._camera is None or not self._camera.isOpened():
             self._camera = None
             return ["failed to connect to the camera"]
@@ -114,9 +112,7 @@ class USBCamera(Camera):
                     self._camera.set(getattr(cv2, k), int(v))  # type: ignore
                     self._applied_config[k] = str(v)
                 except (TypeError, NameError) as e:
-                    issues.append(
-                        f"failed to set config {k} to value {v}: {e}"
-                    )
+                    issues.append(f"failed to set config {k} to value {v}: {e}")
         return issues
 
     def picture(self) -> Tuple[np.ndarray, dict]:

@@ -7,18 +7,17 @@ from queue import Queue
 from typing import Any, Dict, Generator
 
 import pytest
-from nightskycam_serialization.serialize import IncorrectToken
-from nightskycam_serialization.status import deserialize_status
-from nightskyrunner.config import Config
-from nightskyrunner.shared_memory import SharedMemory
-from nightskyrunner.status import State, wait_for_status
-
 from nightskycam.status.runner import StatusRunner
 from nightskycam.tests.runner import TestRunner
 from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
                                           get_manager, runner_started,
                                           wait_for, websocket_connection_test)
 from nightskycam.utils.websocket_manager import websocket_server
+from nightskycam_serialization.serialize import IncorrectToken
+from nightskycam_serialization.status import deserialize_status
+from nightskyrunner.config import Config
+from nightskyrunner.shared_memory import SharedMemory
+from nightskyrunner.status import State, wait_for_status
 
 
 @pytest.fixture

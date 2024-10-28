@@ -10,13 +10,12 @@ from typing import Generator
 
 import pytest
 import tomli
+from nightskycam.utils.commands import Command, CommandDB, get_commandDB
+from nightskycam.utils.websocket_manager import websocket_server
 from nightskycam_serialization.command import (CommandResult,
                                                deserialize_command_result,
                                                serialize_command)
 from nightskycam_serialization.serialize import IncorrectToken
-
-from nightskycam.utils.commands import Command, CommandDB, get_commandDB
-from nightskycam.utils.websocket_manager import websocket_server
 
 
 @pytest.fixture
@@ -98,7 +97,7 @@ def test_execute_one_command(correct_command, tmp_dir, commandDB) -> None:
         # this report in queue_received
         time_start = time.time()
         while time.time() - time_start < 2.0:
-            commandDB.iterate(command_file, uri, token)
+            commandDB.iterate(command_file, uri, token=token)
             if not queue_receive.empty():
                 break
         if queue_receive.empty():
@@ -145,7 +144,7 @@ def test_incorrect_token(tmp_dir, commandDB) -> None:
         with pytest.raises(IncorrectToken):
             time_start = time.time()
             while time.time() - time_start < 2.0:
-                commandDB.iterate(command_file, uri, token)
+                commandDB.iterate(command_file, uri, token=token)
                 if not queue_receive.empty():
                     break
 

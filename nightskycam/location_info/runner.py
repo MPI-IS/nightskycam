@@ -2,15 +2,12 @@
 Module defining LocationInfoRunner.
 """
 
-from contextlib import suppress
 import subprocess
 import time
+from contextlib import suppress
 from datetime import datetime
 from typing import List, Optional
 
-from nightskycam.utils.location_info import LocationInfo, get_location_info
-from nightskycam.utils.night import is_night
-from nightskycam.utils.weather import Weather, get_weather
 from nightskycam_serialization.status import LocationInfoRunnerEntries
 from nightskyrunner.config_getter import ConfigGetter
 from nightskyrunner.runner import ThreadRunner, status_error
@@ -18,8 +15,11 @@ from nightskyrunner.shared_memory import SharedMemory
 from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
-from .ip import get_IPs
+from nightskycam.utils.location_info import LocationInfo, get_location_info
+from nightskycam.utils.night import is_night
+from nightskycam.utils.weather import Weather, get_weather
 
+from .ip import get_IPs
 
 # must be the same value as in nightskycam_images.constants.TIME_FORMAT
 TIME_FORMAT: str = "%H:%M:%S"
@@ -128,9 +128,7 @@ class LocationInfoRunner(ThreadRunner):
         place_id = str(config["place_id"])
         api_key = str(config["weather_api_key"])
         try:
-            sun_alt_threshold = float(
-                config["sun_altitude_threshold"]  # type: ignore
-            )
+            sun_alt_threshold = float(config["sun_altitude_threshold"])  # type: ignore
         except KeyError:
             sun_alt_threshold = -0.1
 
@@ -179,9 +177,7 @@ class LocationInfoRunner(ThreadRunner):
                 location["country"] = info["country"]
                 location["timezone"] = info["timezone"]
         except Exception as e:
-            errors.append(
-                f"{type(e)}: failed to read info related to {place_id} ({e})"
-            )
+            errors.append(f"{type(e)}: failed to read info related to {place_id} ({e})")
 
         # what is the current sun altitude ? is it night time ?
         if info:
@@ -195,14 +191,10 @@ class LocationInfoRunner(ThreadRunner):
                 location["night"] = night
                 location["sun_alt"] = sun_alt
             except Exception as e:
-                errors.append(
-                    f"{type(e)}: failed to determine if night time: {e}"
-                )
+                errors.append(f"{type(e)}: failed to determine if night time: {e}")
 
         # network IP(s) of the system
-        location["IPs"] = ", ".join(
-            [ip for ip in get_IPs() if "127.0.0.1" not in ip]
-        )
+        location["IPs"] = ", ".join([ip for ip in get_IPs() if "127.0.0.1" not in ip])
 
         # local time
         location["local_time"] = datetime.now().strftime(TIME_FORMAT)

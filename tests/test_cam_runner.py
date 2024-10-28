@@ -211,17 +211,15 @@ def _set_local_info(
     memory["cloud_cover"] = cloud_cover
     memory["time_stamp"] = time_stamp
 
-    
-def _set_failed_local_info(
-        time_stamp: float
-) -> None:
+
+def _set_failed_local_info(time_stamp: float) -> None:
     memory = SharedMemory.get(LocationInfoRunner.sm_key)
     with suppress(KeyError):
         del memory["night"]
         del memory["weather"]
         del memory["cloud_cover"]
     memory["time_stamp"] = time_stamp
-    
+
 
 def test_get_local_info(reset_memory) -> None:
     """
@@ -375,8 +373,8 @@ def test_wait_duration() -> None:
     assert sleep1 == pytest.approx(1.0 - 5000 * 1e-6)
     assert sleep2 == pytest.approx(1.0 - 601 * 1e-6)
 
-    
-def test_no_local_info(tmp_dir)->None:
+
+def test_no_local_info(tmp_dir) -> None:
 
     time_stamp = time.time()
     _set_failed_local_info(time_stamp)
@@ -397,6 +395,3 @@ def test_no_local_info(tmp_dir)->None:
         wait_for(runner_started, True, args=(DummyCamRunner.__name__,))
         wait_for_status(DummyCamRunner.__name__, State.running, timeout=2.0)
         exception_on_error_state(DummyCamRunner.__name__)
-
-
-    

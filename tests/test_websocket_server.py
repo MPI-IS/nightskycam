@@ -5,7 +5,6 @@ Tests for [nightksycam.websocket_manager.websocket_server](websocket_server)
 import time
 
 import websocket
-
 from nightskycam.utils.websocket_manager import websocket_server
 
 _URL = "127.0.0.1"

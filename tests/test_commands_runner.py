@@ -88,9 +88,7 @@ def _command_runner_test(
     wait_for(nb_clients, 1)
     wait_for_status(CommandRunner.__name__, State.running, timeout=2.0)
     # sending a command to the runner
-    queue_send.put(
-        serialize_command(command_id, command, token=str(config["token"]))
-    )
+    queue_send.put(serialize_command(command_id, command, token=str(config["token"])))
     # waiting for the runner to send the report back
     wait_for(queue_receive.empty, False, runners=CommandRunner.__name__)
     report = tomli.loads(queue_receive.get())
@@ -124,9 +122,7 @@ def test_commands_runner(tmp_dir, reset_memory) -> None:
 
 
 @pytest.mark.parametrize("incorrect_token", ["incorrect_token", None])
-def test_commands_runner_wrong_token(
-    incorrect_token, tmp_dir, reset_memory
-) -> None:
+def test_commands_runner_wrong_token(incorrect_token, tmp_dir, reset_memory) -> None:
     """
     Testing command runner turns to error mode when
     sent commands with wrong token

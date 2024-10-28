@@ -58,9 +58,7 @@ class TestRunner(ProcessRunner):
         except KeyError:
             value = -1
         self._iteration += 1
-        self._status.entries(
-            StatusTest(iteration=self._iteration, value=value)
-        )
+        self._status.entries(StatusTest(iteration=self._iteration, value=value))
         if config["error"]:
             raise RuntimeError("TestRunner configured to raise an error")
 
