@@ -12,7 +12,7 @@ from nightskyrunner.runner import ThreadRunner, status_error
 from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
-from .utils import (DiskSpaceInfo, bits_to_human, convert_mb_to_bits,
+from .utils import (DiskSpaceInfo, bits_to_human, bytes_to_human, convert_mb_to_bits,
                     disk_space_info, disk_space_info_str, files_to_delete,
                     folder_content, to_GB)
 
@@ -95,7 +95,7 @@ class SpaceKeeperRunner(ThreadRunner):
                 folder=f"content size: {bits_to_human(folder_size)}{files_listing}",
                 disk=disk_space_info_str(disk_info),
                 threshold=bits_to_human(convert_mb_to_bits(threshold_MB)),
-                free_space=to_GB(bits_to_human(disk_info["free_space"])),
+                free_space=to_GB(bytes_to_human(disk_info["free_space"])),
                 deleting=len(to_delete) > 0,
             )
         )

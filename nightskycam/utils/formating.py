@@ -51,3 +51,28 @@ def bits_to_human(bits: int) -> str:
         return f"{megabytes:.2f} MB"
     gigabytes = megabytes / 1024
     return f"{gigabytes:.2f} GB"
+
+
+def bytes_to_human(bytes_value):
+    # Define conversion factors
+    KB = 1024
+    MB = KB * 1024
+    GB = MB * 1024
+    TB = GB * 1024
+
+    # Determine the appropriate unit
+    if bytes_value >= TB:
+        value = bytes_value / TB
+        unit = "TB"
+    elif bytes_value >= GB:
+        value = bytes_value / GB
+        unit = "GB"
+    elif bytes_value >= MB:
+        value = bytes_value / MB
+        unit = "MB"
+    else:
+        value = bytes_value / KB
+        unit = "KB"
+
+    # Format the output
+    return f"{value:.2f} {unit}"

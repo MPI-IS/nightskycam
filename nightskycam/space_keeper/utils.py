@@ -9,7 +9,7 @@ from typing import Dict, List, Tuple, TypedDict
 
 import psutil
 
-from ..utils.formating import bits_to_human
+from ..utils.formating import bits_to_human, bytes_to_human
 
 _BITS_PER_BYTE = 8
 
@@ -71,17 +71,18 @@ def disk_space_info(path: Path = _root_folder) -> DiskSpaceInfo:
 
     disk_usage = psutil.disk_usage(str(path))
     return {
-        "total_space": disk_usage.total * _BITS_PER_BYTE,
-        "free_space": disk_usage.free * _BITS_PER_BYTE,
-        "used_space": disk_usage.used * _BITS_PER_BYTE,
+        "total_space": disk_usage.total,
+        "free_space": disk_usage.free,
+        "used_space": disk_usage.used,
         "percent_used": float(disk_usage.percent),
     }
 
 
 def disk_space_info_str(dsi: DiskSpaceInfo) -> str:
     return str(
-        f"{bits_to_human(dsi['total_space'] * _BITS_PER_BYTE)} "
-        f"- free: {dsi['percent_used']}% ({bits_to_human(dsi['free_space'] * _BITS_PER_BYTE)})"
+        f"{bytes_to_human(dsi['total_space'])} "
+        f"- used: {dsi['percent_used']}% "
+        f"({bytes_to_human(dsi['free_space'])} free)"
     )
 
 
