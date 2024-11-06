@@ -14,6 +14,7 @@ from nightskyrunner.runner import status_error
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
 from ..cams.runner import CamRunner
+from ..utils import focus
 from .camera import AsiCamera
 
 
@@ -114,4 +115,15 @@ class AsiCamRunner(CamRunner):
         except Exception as e:
             self._camera = None
             raise e
+
+        if focus.focus_configured(config):
+            focus_issue = focus.set_focus(config)
+            if focus_issue:
+                issues.append(focus_issue)
+
+        if focus.aperture_configured(config, active):
+            aperture_issue = focus.set_aperture(config, active)
+            if aperture_issue:
+                issues.append(aperture_issue)
+
         return self._camera, issues

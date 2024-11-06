@@ -7,7 +7,7 @@ import typing
 from pathlib import Path
 
 import pytest
-from nightskycam.ftp.ftp import FtpConfig, FtpServer, get_ftp
+from nightskycam.utils.ftp import FtpConfig, FtpServer, get_ftp
 
 
 @pytest.fixture

@@ -12,9 +12,9 @@ from nightskyrunner.runner import ThreadRunner, status_error
 from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
-from .utils import (DiskSpaceInfo, bits_to_human, bytes_to_human, convert_mb_to_bits,
-                    disk_space_info, disk_space_info_str, files_to_delete,
-                    folder_content, to_GB)
+from .utils import (DiskSpaceInfo, bits_to_human, bytes_to_human,
+                    convert_mb_to_bits, disk_space_info, disk_space_info_str,
+                    files_to_delete, folder_content, to_GB)
 
 
 @status_error
@@ -57,11 +57,11 @@ class SpaceKeeperRunner(ThreadRunner):
         super().__init__(name, config_getter, interrupts, core_frequency)
         self._nb_deleted: int = 0
 
-    def iterate(self):
+    def iterate(self) -> None:
 
         # reading this runner toml config file
         config = self.get_config()
-        folder = pathlib.Path(config["folder"])
+        folder = pathlib.Path(str(config["folder"]))
         threshold_MB = int(config["threshold_MB"])  # type: ignore
 
         # invalid configuration, exit with error
@@ -106,4 +106,3 @@ class SpaceKeeperRunner(ThreadRunner):
             self._status.activity("deleting files")
             list(map(os.remove, to_delete))
             self._nb_deleted += len(to_delete)
-            self._status.value("number of deleted files", self._nb_deleted)

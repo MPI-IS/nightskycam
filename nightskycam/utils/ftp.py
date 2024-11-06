@@ -7,18 +7,17 @@ related unit-tests.
 import logging
 import os
 import threading
-import typing
 from ftplib import FTP, FTP_TLS
 from pathlib import Path
 from socket import gaierror
-from typing import Optional, Tuple, Union
+from typing import Iterable, List, Optional, Sequence, Tuple, Type, Union
 
 from pyftpdlib.authorizers import DummyAuthorizer
 from pyftpdlib.handlers import FTPHandler
 from pyftpdlib.servers import ThreadedFTPServer
 from typing_extensions import TypeAlias
 
-Files = typing.Union[Path, typing.Iterable[Path]]
+Files = Union[Path, Iterable[Path]]
 _logger = logging.getLogger("ftp")
 
 
@@ -33,7 +32,7 @@ class FtpConfig:
         passwd: str,
         host: str = "127.0.0.1",
         port: int = 2121,
-        folder: typing.Optional[Path] = None,
+        folder: Optional[Path] = None,
     ):
         self.username = username
         self.passwd = passwd
@@ -72,7 +71,7 @@ class FtpServer:
         handler = FTPHandler
         handler.authorizer = authorizer
         self._server = ThreadedFTPServer((config.host, config.port), handler)
-        self._thread: typing.Optional[threading.Thread] = None
+        self._thread: Optional[threading.Thread] = None
 
     def start(self):
         """
@@ -111,15 +110,16 @@ class _FTP_TLS(FTP_TLS):
         return conn, size
 
 
-Ftp: TypeAlias = Union[FTP, _FTP_TLS]
+FtpInstance: TypeAlias = Union[FTP, _FTP_TLS]
+FtpClass: TypeAlias = Union[Type[FTP], Type[_FTP_TLS]]
 
 
 def _simpler_connect(
     host: str,
-    port: typing.Optional[int] = None,
-    username: typing.Optional[str] = None,
-    passwd: typing.Optional[str] = None,
-    timeout: typing.Optional[float] = 10,
+    port: Optional[int] = None,
+    username: Optional[str] = None,
+    passwd: Optional[str] = None,
+    timeout: Optional[float] = 10,
 ) -> FTP:
     # connects to the ftp server.
     # Used internally by Ftp (see below)
@@ -156,12 +156,13 @@ def _simpler_connect(
 
 def _connect(
     host: str,
-    port: typing.Optional[int] = None,
-    username: typing.Optional[str] = None,
-    passwd: typing.Optional[str] = None,
-    timeout: typing.Optional[float] = 10,
-) -> Ftp:
+    port: Optional[int] = None,
+    username: Optional[str] = None,
+    passwd: Optional[str] = None,
+    timeout: Optional[float] = 10,
+) -> FtpInstance:
     tls: bool
+    ftp_class: FtpClass
     if username is None or passwd is None:
         ftp_class = FTP
         tls = False
@@ -170,10 +171,16 @@ def _connect(
         tls = True
     ftp_instance = ftp_class(timeout=timeout)
     try:
-        ftp_instance.connect(host, port=port)
+        if port is not None:
+            ftp_instance.connect(host, port=port)
+        else:
+            ftp_instance.connect(host)
         if tls:
-            ftp_instance.login(user=username, passwd=passwd)
-            ftp_instance.prot_p()
+            kwargs = {"user": username, "passwd": passwd}
+            kwargs_ = {k: v for k, v in kwargs.items() if v is not None}
+            ftp_instance.login(**kwargs_)
+            if isinstance(ftp_instance, _FTP_TLS):
+                ftp_instance.prot_p()
         else:
             ftp_instance.login()
     except Exception as e:
@@ -187,7 +194,7 @@ def _connect(
     return ftp_instance
 
 
-def _cd(ftp: Ftp, remote_path: Path) -> None:
+def _cd(ftp: FtpInstance, remote_path: Path) -> None:
     # change the current remote ftp directory,
     # used internally by Ftp (see below)
 
@@ -203,7 +210,7 @@ def _cd(ftp: Ftp, remote_path: Path) -> None:
         raise FTPError(f"Failed to create/cd directory {remote_path}: " f"{e}")
 
 
-def _rmdir(ftp: Ftp, folder: str) -> None:
+def _rmdir(ftp: FtpInstance, folder: str) -> None:
     # delete the remote directory,
     # used internally by Ftp (see below)
 
@@ -229,7 +236,7 @@ class Ftp:
     def __init__(
         self,
         config: FtpConfig,
-        remote_path: typing.Optional[Path] = None,
+        remote_path: Optional[Path] = None,
     ):
         self.host = config.host
         self.remote_path = remote_path
@@ -239,7 +246,7 @@ class Ftp:
         self.upload_size: int = 0
         self.nb_uploaded_files: int = 0
 
-        self.ftp: Ftp = _connect(
+        self.ftp: FtpInstance = _connect(
             self.host,
             port=self.port,
             username=self.username,
@@ -262,7 +269,7 @@ class Ftp:
             _rmdir(self.ftp, str(self.remote_path))
         self.close()
 
-    def ls(self) -> typing.List[str]:
+    def ls(self) -> List[str]:
         """
         List the content of the current remote folder
         """
@@ -298,7 +305,7 @@ class Ftp:
             raise FTPError(f"Failed to upload {path}: {e}")
 
         # checking the size of the remote uploaded file
-        remote_file_size: typing.Optional[int] = self.ftp.size(filename)
+        remote_file_size: Optional[int] = self.ftp.size(filename)
 
         # keeping track of the number of files this FTP connection
         # has uploaded
@@ -355,11 +362,11 @@ class Ftp:
     def upload_dir(
         self,
         local_path: Path,
-        extensions: typing.Optional[typing.Sequence[str]] = None,
+        extensions: Optional[Sequence[str]] = None,
         delete_local: bool = False,
-        batch_size: typing.Optional[int] = None,
-        glob: typing.Optional[str] = None,
-    ) -> typing.Tuple[int, int]:
+        batch_size: Optional[int] = None,
+        glob: Optional[str] = None,
+    ) -> Tuple[int, int]:
         """
         Upload all the files contained in "local_path".
         If "extensions" is not None, only the files of the specified extensions
@@ -375,7 +382,7 @@ class Ftp:
                 f"Failed to upload the content of {local_path}: " "folder not found"
             )
 
-        files: typing.List[Path] = []
+        files: List[Path] = []
         uploaded_size = 0
 
         if extensions is not None:
@@ -411,7 +418,7 @@ class Ftp:
             pass
         _logger.debug(f"closed connection to {self.host}")
 
-    def get_stats(self) -> typing.Tuple[int, int]:
+    def get_stats(self) -> Tuple[int, int]:
         """
         Returns the tuple:
         - number of uploaded files by this connection

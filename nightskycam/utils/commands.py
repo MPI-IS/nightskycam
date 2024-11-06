@@ -288,7 +288,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         # sending to server output of executed commands
         # (for informing users of the django server)
 
-        result = finished_command.get_result()
+        result: CommandResult = finished_command.get_result()
 
         stdout = result.stdout.strip()
 
@@ -300,11 +300,18 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         except OSError as e:
             # some strings can not be "cast" as path
             stdout_file = None
-            
+
         if ftp_config and stdout_file_exists:
-            with get_ftp(ftp_config, ftp_config.folder) as ftp:
-                uploaded_size = ftp.upload(stdout_file, True)
-            result.stdout = stdout_file.name
+            try:
+                if ftp_config.folder is None:
+                    raise ValueError("ftp upload directory not specified")
+                with get_ftp(ftp_config, ftp_config.folder) as ftp:
+                    uploaded_size = ftp.upload(stdout_file, True)
+                if stdout_file:
+                    result.stdout = stdout_file.name
+            except Exception as e:
+                result.exit_code = "1"
+                result.stderr = f"failed to upload image via ftp: {e}"
 
         message = serialize_command_result(result, token=token)
         self.send(url, message, status=status, cert_file=cert_file)

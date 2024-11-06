@@ -26,3 +26,10 @@ width = 4144
 height = 2822
 bins = 1
 types = "raw16"
+
+
+# uncomment only if equipped with
+# an adapter to set the focus and aperture
+#focus = 140
+#active_aperture = 441
+#inactive_aperture = 2303

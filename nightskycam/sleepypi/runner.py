@@ -92,7 +92,7 @@ def _time_to_sleep(
     return r
 
 
-def _sleep_duration(time_now: dtime.time, stop_sleep: dtime.time) -> int:
+def _sleep_duration(time_now: datetime.time, stop_sleep: datetime.time) -> int:
     # Convert time objects to dtime objects for today
     now = dtime.combine(dtime.today(), time_now)
     stop = dtime.combine(dtime.today(), stop_sleep)

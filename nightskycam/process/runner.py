@@ -98,7 +98,7 @@ def _process(
     darkframes_file: Optional[Path]
     try:
         df = str(config["darkframes"])
-        if not df or df=="None":
+        if not df or df == "None":
             darkframes_file = None
         else:
             darkframes_file = Path(df)

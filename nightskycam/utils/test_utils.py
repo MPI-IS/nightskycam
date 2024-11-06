@@ -174,9 +174,9 @@ def get_manager(
         runner_class = runner_class_config[0]
         config = runner_class_config[1]
         try:
-            runner_name = runner_class_config[2]
-        # When optional argument (runner name) was not given.
+            runner_name = runner_class_config[2]  # type: ignore
         except IndexError:
+            # When optional argument (runner name) was not given.
             runner_name = runner_class.__name__
         if type(config) is PosixPath:
             runner_factory = TomlRunnerFactory(

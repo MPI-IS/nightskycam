@@ -58,7 +58,7 @@ class CommandRunner(ProcessRunner):
         except KeyError:
             remote_subdir_ = None
         if remote_subdir_ in ("None", ""):
-            remote_subdir = None
+            remote_subdir = Path("")
         else:
             remote_subdir = Path(str(remote_subdir_))
         nightskycam = str(config["nightskycam"])
