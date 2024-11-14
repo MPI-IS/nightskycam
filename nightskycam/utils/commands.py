@@ -303,7 +303,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
             
         if ftp_config and stdout_file_exists:
             with get_ftp(ftp_config, ftp_config.folder) as ftp:
-                uploaded_size = ftp.upload(stdout_file, True)
+                uploaded_size = ftp.upload(stdout_file, False)
             result.stdout = stdout_file.name
 
         message = serialize_command_result(result, token=token)
