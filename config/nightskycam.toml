@@ -58,6 +58,16 @@ args = ["space_keeper_runner.toml"]
 #[sleepy_pi_runner.kwargs]
 #"vars" = "vars.toml"
 
+# Uncomment if you use an adapter for aperture
+#
+#[aperture_runner]
+#class_runner = "nightskycam.aperture.runner.ApertureRunner"
+#class_config_getter = "nightskyrunner.config_toml.DynamicTomlConfigGetter"
+#args = ["aperture.toml"]
+#[aperture_runner.kwargs]
+#"vars" = "vars.toml"
+
+
 # Uncomment if you setup a web-server
 #
 #
