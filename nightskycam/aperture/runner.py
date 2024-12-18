@@ -2,22 +2,19 @@
 Module defining ApertureRunner
 """
 
-from nightskyrunner.config_getter import ConfigGetter
-from nightskyrunner.runner import ThreadRunner, status_error
-from nightskyrunner.status import Level
-from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
-from nightskycam_serialization.status import (
-    CamRunnerEntries,
-    ApertureRunnerEntries,
-)
-from nightskyrunner.status import Status, NoSuchStatusError
-from nightskycam_focus.adapter import (
-    adapter, Aperture, set_aperture, set_focus, MIN_FOCUS, MAX_FOCUS
-)
-from enum import Enum
-from typing import Optional, cast
 from datetime import datetime
 from datetime import time as datetime_time
+from enum import Enum
+from typing import Optional, cast
+
+from nightskycam_focus.adapter import (MAX_FOCUS, MIN_FOCUS, Aperture, adapter,
+                                       set_aperture, set_focus)
+from nightskycam_serialization.status import (ApertureRunnerEntries,
+                                              CamRunnerEntries)
+from nightskyrunner.config_getter import ConfigGetter
+from nightskyrunner.runner import ThreadRunner, status_error
+from nightskyrunner.status import Level, NoSuchStatusError, Status
+from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
 
 class Opening(Enum):
@@ -80,7 +77,7 @@ class ApertureRunner(ThreadRunner):
         super().__init__(name, config_getter, interrupts, core_frequency)
         self._opening = Opening.UNSET
         self._focus: Optional[int] = None
-        
+
     def _camera_active(self) -> Optional[bool]:
         try:
             camera_status = Status.retrieve("asi_cam_runner")
@@ -101,12 +98,13 @@ class ApertureRunner(ThreadRunner):
                 "but failed to retrieve the entries from the 'asi_cam_runner' status"
             )
             return None
-        
-    def _close_aperture(self, reason: str) -> None:
+
+    def _close_aperture(self, focus: int, reason: str) -> None:
         if self._opening in (Opening.OPENED, Opening.UNSET):
             self.log(Level.info, f"closing aperture: {reason}")
             try:
                 with adapter():
+                    set_focus(focus)
                     set_aperture(Aperture.MIN)
             except Exception as e:
                 raise RuntimeError(f"failed to close aperture: {e}")
@@ -114,7 +112,11 @@ class ApertureRunner(ThreadRunner):
                 self._opening = Opening.CLOSED
 
     def _open_aperture(self, focus: int, reason: str) -> None:
-        if self._focus is None or self._focus!=focus or self._opening in (Opening.CLOSED, Opening.UNSET):
+        if (
+            self._focus is None
+            or self._focus != focus
+            or self._opening in (Opening.CLOSED, Opening.UNSET)
+        ):
             self.log(Level.info, f"opening aperture (focus: {focus}): {reason}")
             try:
                 with adapter():
@@ -127,12 +129,16 @@ class ApertureRunner(ThreadRunner):
                 self._focus = focus
 
     def _return(
-            self, status_entries: ApertureRunnerEntries, focus: int, opened: bool, reason: str
+        self,
+        status_entries: ApertureRunnerEntries,
+        focus: int,
+        opened: bool,
+        reason: str,
     ) -> None:
         if opened:
             self._open_aperture(focus, reason)
         else:
-            self._close_aperture(reason)
+            self._close_aperture(focus, reason)
         status_entries["status"] = "opened" if opened else "closed"
         status_entries["reason"] = reason
         self._status.entries(status_entries)
@@ -178,13 +184,13 @@ class ApertureRunner(ThreadRunner):
                 "configuration for focus should be an int, "
                 f"got {focus} ({type(focus)}) instead"
             )
-        if focus<MIN_FOCUS or focus>MAX_FOCUS:
+        if focus < MIN_FOCUS or focus > MAX_FOCUS:
             raise ValueError(
                 f"configuration for focus should be between {MIN_FOCUS} and {MAX_FOCUS}"
                 f"got {focus}"
             )
-        status_entries["focus"]=focus
-        
+        status_entries["focus"] = focus
+
         # aperture not used, keep open
         if not use:
             self._return(status_entries, focus, True, "aperture not used")
@@ -196,9 +202,7 @@ class ApertureRunner(ThreadRunner):
                 if active:
                     return self._return(status_entries, focus, True, "camera active")
                 else:
-                    return self._return(
-                        status_entries, focus, False, "camera inactive"
-                    )
+                    return self._return(status_entries, focus, False, "camera inactive")
 
         # if not using use_zwo_camera, then must be using start/end time
         time_now = datetime.now().time()

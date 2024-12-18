@@ -4,18 +4,17 @@ import os
 import sys
 import time
 from pathlib import Path
+from typing import List
 
 from nightskyrunner.config_toml import DynamicTomlManagerConfigGetter
-from nightskyrunner.log import set_logging
 from nightskyrunner.manager import Manager
-from nightskyrunner.status import Level
-
-_logger = logging.Logger("executable")
 
 
-def _set_log(level=Level.info) -> None:
-    stdout = True
-    set_logging(stdout, level=level)
+def _set_log(level: int = logging.INFO) -> logging.Logger:
+    handlers: List[logging.Handler] = []
+    handlers.append(logging.StreamHandler())
+    logging.basicConfig(level=level, handlers=handlers)
+    return logging.getLogger("executable")
 
 
 def _get_default_config_path() -> Path:
@@ -31,38 +30,39 @@ def _how_to() -> str:
     )
 
 
-def _get_config_path() -> Path:
+def _get_config_path(logger: logging.Logger) -> Path:
     if len(sys.argv) > 1:
         path = Path(sys.argv[1])
     else:
         path = _get_default_config_path()
     if not path.is_file():
-        _logger.info(_how_to())
-        _logger.error(f"failed to find the configuration file {path}")
+        logger.info(_how_to())
+        logger.error(f"failed to find the configuration file {path}")
         raise FileNotFoundError(str(path))
     return path
 
 
-def _run(config_path: Path) -> None:
-    _logger.info(f"starting nightskycam using the configuration file {config_path}")
+def _run(config_path: Path, logger: logging.Logger) -> None:
+    logger.info(f"starting nightskycam using the configuration file {config_path}")
     manager_config_getter = DynamicTomlManagerConfigGetter(config_path)
     with Manager(manager_config_getter, name="nightskycam"):
         while True:
             try:
                 time.sleep(0.2)
             except KeyboardInterrupt:
-                _logger.info("keyboard interrupt")
+                logger.info("keyboard interrupt")
                 break
-    _logger.info("exiting nightskycam")
+    logger.info("exiting nightskycam")
 
 
 def execute() -> None:
+    logger = _set_log(level=logging.INFO)
     try:
-        _set_log()
-        config_path = _get_config_path()
-        _run(config_path)
+        config_path = _get_config_path(logger)
+        _run(config_path, logger)
     except Exception as e:
-        _logger.error(f"error while running nightskycam: {e}")
+
+        logger.error(f"error while running nightskycam: {e}")
         sys.exit(1)
     sys.exit(0)
 
