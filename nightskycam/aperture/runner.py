@@ -15,10 +15,7 @@ from nightskycam_focus.adapter import (
     set_aperture,
     set_focus,
 )
-from nightskycam_serialization.status import (
-    ApertureRunnerEntries,
-    CamRunnerEntries,
-)
+from nightskycam_serialization.status import ApertureRunnerEntries, CamRunnerEntries
 from nightskyrunner.config_getter import ConfigGetter
 from nightskyrunner.runner import ThreadRunner, status_error
 from nightskyrunner.status import Level, NoSuchStatusError, Status
@@ -125,17 +122,13 @@ class ApertureRunner(ThreadRunner):
             or self._focus != focus
             or self._opening in (Opening.CLOSED, Opening.UNSET)
         ):
-            self.log(
-                Level.info, f"opening aperture (focus: {focus}): {reason}"
-            )
+            self.log(Level.info, f"opening aperture (focus: {focus}): {reason}")
             try:
                 with adapter():
                     set_focus(focus)
                     set_aperture(Aperture.MAX)
             except Exception as e:
-                raise RuntimeError(
-                    f"failed to set focus and open aperture: {e}"
-                )
+                raise RuntimeError(f"failed to set focus and open aperture: {e}")
             else:
                 self._opening = Opening.OPENED
                 self._focus = focus
@@ -205,20 +198,16 @@ class ApertureRunner(ThreadRunner):
 
         # aperture not used, keep open
         if not use:
-            self._return(status_entries, focus, True, "aperture not used")
+            return self._return(status_entries, focus, True, "aperture not used")
 
         # opening / closing based on the status of the camera
         if use_zwo_camera:
             active: Optional[bool] = self._camera_active()
             if active is not None:
                 if active:
-                    return self._return(
-                        status_entries, focus, True, "camera active"
-                    )
+                    return self._return(status_entries, focus, True, "camera active")
                 else:
-                    return self._return(
-                        status_entries, focus, False, "camera inactive"
-                    )
+                    return self._return(status_entries, focus, False, "camera inactive")
 
         # if not using use_zwo_camera, then must be using start/end time
         time_now = datetime.now().time()
