@@ -1144,13 +1144,13 @@ files = [
 
 [[package]]
 name = "nightskycam-focus"
-version = "0.1.4"
+version = "0.1.5"
 description = "focusing nightskycam zwo-asi cameras"
 optional = false
 python-versions = "<4.0,>=3.9"
 files = [
-    {file = "nightskycam_focus-0.1.4-py3-none-any.whl", hash = "sha256:d0af0dfa0145a7d3b8ecb98e80146a01fa8e379dc61d316e0bcb8c45a9b7e847"},
-    {file = "nightskycam_focus-0.1.4.tar.gz", hash = "sha256:baf3bbb69b563d5b3339d9861ebed7f8401bc876322f0f7b0165582150ea7f20"},
+    {file = "nightskycam_focus-0.1.5-py3-none-any.whl", hash = "sha256:7d04e28d2da6bc39662a43b7663cb2999e7babf5aa0ce0e94969b7756f24536a"},
+    {file = "nightskycam_focus-0.1.5.tar.gz", hash = "sha256:cd02f65a9b3a319be0ba2d115915593cf6f453627f5acbfb031ff077d886af22"},
 ]
 
 [package.dependencies]
@@ -1159,6 +1159,7 @@ matplotlib = ">=3.9.2,<4.0.0"
 opencv-python = "4.5.1.48"
 rpi-gpio = ">=0.7.1,<0.8.0"
 scipy = ">=1.13,<2.0"
+spidev = ">=3.6,<4.0"
 
 [[package]]
 name = "nightskycam-serialization"
@@ -1804,6 +1805,17 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 files = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
     {file = "six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
+]
+
+[[package]]
+name = "spidev"
+version = "3.6"
+description = "Python bindings for Linux SPI access through spidev"
+optional = false
+python-versions = "*"
+files = [
+    {file = "spidev-3.6-cp39-cp39-linux_armv7l.whl", hash = "sha256:280abc00a1ef7780ef62c3f294f52a2527b6c47d8c269fea98664970bcaf6da5"},
+    {file = "spidev-3.6.tar.gz", hash = "sha256:14dbc37594a4aaef85403ab617985d3c3ef464d62bc9b769ef552db53701115b"},
 ]
 
 [[package]]
