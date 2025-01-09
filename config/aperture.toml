@@ -1,5 +1,5 @@
 frequency = 0.1
 use = true
-use_zwo_camera = true
+use_zwo_asi = true
 start_time = "10:00"
 end_time = "16:00"

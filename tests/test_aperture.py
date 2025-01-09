@@ -9,7 +9,9 @@ from typing import Generator
 
 import pytest
 import tomli_w
-from nightskycam_serialization.status import ApertureRunnerEntries, AsiCamRunnerEntries
+from nightskycam_serialization.status import (
+    AsiCamRunnerEntries,
+)
 from nightskyrunner.config import Config
 from nightskyrunner.status import State, Status, wait_for_status
 
@@ -68,7 +70,9 @@ def _datetime_now_time():
 @pytest.fixture(autouse=True)
 def patch_set_focus(mocker):
     mocker.patch(__name__ + ".set_focus", side_effect=mock_set_focus)
-    mocker.patch("nightskycam.aperture.runner.set_focus", side_effect=mock_set_focus)
+    mocker.patch(
+        "nightskycam.aperture.runner.set_focus", side_effect=mock_set_focus
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -83,7 +87,9 @@ def patch_set_aperture(mocker):
 @pytest.fixture(autouse=True)
 def patch_adapter(mocker):
     mocker.patch(__name__ + ".adapter", side_effect=mock_adapter)
-    mocker.patch("nightskycam.aperture.runner.adapter", side_effect=mock_adapter)
+    mocker.patch(
+        "nightskycam.aperture.runner.adapter", side_effect=mock_adapter
+    )
 
 
 @pytest.fixture(autouse=True)
@@ -126,11 +132,13 @@ def tmp_dir(request, scope="function") -> Generator[Path, None, None]:
 
 class _RunnerConfig:
     @classmethod
-    def get_config(cls, destination_folder: Path, unsupported: bool = False) -> Config:
+    def get_config(
+        cls, destination_folder: Path, unsupported: bool = False
+    ) -> Config:
         if unsupported:
             return {
                 "use": 1,  # not a bool
-                "use_zwo_camera": 0,  # not a bool
+                "use_zwo_asi": 0,  # not a bool
                 "start_time": "10-00",  # not expected format
                 "stop_time": "noon",  # not supported
                 "focus": -600,  # out of bound
@@ -139,7 +147,7 @@ class _RunnerConfig:
             return {
                 "frequency": 10,
                 "use": True,
-                "use_zwo_camera": False,
+                "use_zwo_asi": False,
                 "start_time": "10:00",
                 "stop_time": "17:30",
                 "focus": 600,
@@ -180,7 +188,7 @@ def test_open_close(tmp_dir) -> None:
     config: Config = {
         "frequency": 10,
         "use": True,
-        "use_zwo_camera": False,
+        "use_zwo_asi": False,
         "start_time": "10:00",
         "stop_time": "17:30",
         "focus": 600,
@@ -215,18 +223,19 @@ def test_open_close(tmp_dir) -> None:
         config["start_time"] = "8:00"
         _write_test_runner_config(config, config_file)
         wait_for(_aperture_closed, True)
-        # now activating the zwo asi camera and setting "use_zwo_camera" to True:
+        # now activating the zwo asi camera and setting "use_zwo_asi" to True:
         # the aperture should open
         _set_asi_cam_active()
-        config["use_zwo_camera"] = True
+        config["use_zwo_asi"] = True
         _write_test_runner_config(config, config_file)
         wait_for(_aperture_opened, True)
         # setting the camera to inactive, the aperture should close
         _set_asi_cam_inactive()
         wait_for(_aperture_closed, True)
         # stop using the zwo asi camera, the aperture should open
-        # (because 8am)
+        # (because 10am)
         _set_asi_cam_active()
+        config["start_time"] = "10:00"
         config["use_zwo_asi"] = False
         _write_test_runner_config(config, config_file)
         wait_for(_aperture_opened, True)
@@ -237,6 +246,7 @@ def test_open_close(tmp_dir) -> None:
         wait_for(_focus_value, 550)
         # using zwo asi again
         _set_asi_cam_inactive()
+        config["start_time"] = "8:00"
         config["use_zwo_asi"] = True
         _write_test_runner_config(config, config_file)
         wait_for(_aperture_closed, True)
