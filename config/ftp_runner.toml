@@ -5,5 +5,5 @@ username = "{{ ftp_username }}"
 password = "{{ ftp_password }}"
 source_folder = "{{ root_directory }}/ftp"
 batch = 4
-remote_subdir = ""
+remote_subdir = "nightskycam"
 nightskycam = "{{ nightskycam }}"
