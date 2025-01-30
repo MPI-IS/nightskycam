@@ -7,15 +7,25 @@ from pathlib import Path
 from typing import Generator, List
 
 import pytest
-from nightskycam.space_keeper.runner import SpaceKeeperRunner
-from nightskycam.space_keeper.utils import (convert_mb_to_bits, file_size,
-                                            files_to_delete, free_space, to_GB)
-from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
-                                          exception_on_error_state,
-                                          get_manager, runner_started,
-                                          wait_for)
 from nightskyrunner.config import Config
 from nightskyrunner.status import State, wait_for_status
+
+from nightskycam.space_keeper.runner import SpaceKeeperRunner
+from nightskycam.space_keeper.utils import (
+    convert_mb_to_bits,
+    file_size,
+    files_to_delete,
+    free_space,
+    to_GB,
+)
+from nightskycam.utils.test_utils import (
+    ConfigTester,
+    configuration_test,
+    had_error,
+    get_manager,
+    runner_started,
+    wait_for,
+)
 
 """ Module for testing the runner SpaceKeeper and its related utils """
 
@@ -79,7 +89,11 @@ class _SpaceKeeperRunnerConfig:
         if unsupported:
             return {"folder": "/an/invalid/path", "threshold_MB": -1}
         else:
-            return {"folder": str(folder), "threshold_MB": 100, "frequency": 10.0}
+            return {
+                "folder": str(folder),
+                "threshold_MB": 100,
+                "frequency": 10.0,
+            }
 
     @classmethod
     def get_config_tester(cls, folder: Path) -> ConfigTester:
@@ -125,12 +139,16 @@ def test_file_size(tmp_dir):
         assert file_size(path) == filesize
 
 
-def _write_files(target_folder: Path, nb_files: int, filesize_bits: int) -> List[Path]:
+def _write_files(
+    target_folder: Path, nb_files: int, filesize_bits: int
+) -> List[Path]:
     r: List[Path] = []
     letters = string.ascii_letters
     for _ in range(nb_files):
         filename = "".join(random.choice(letters) for i in range(8))
-        r.append(_create_file_with_size(target_folder, filename, filesize_bits))
+        r.append(
+            _create_file_with_size(target_folder, filename, filesize_bits)
+        )
         # making sure files do not have the same timestamp
         time.sleep(0.01)
 
@@ -167,7 +185,9 @@ def test_space_keeper_runner(tmp_dir, mocker) -> None:
         # does not take the real size of file into account.
         threshold_bits = convert_mb_to_bits(threshold_MB)
         nb_files = len(_list_files(target_dir))
-        free_space_bits = threshold_bits + filesize_bits * (nb_files_ok - nb_files)
+        free_space_bits = threshold_bits + filesize_bits * (
+            nb_files_ok - nb_files
+        )
         return free_space_bits
 
     config: Config = _SpaceKeeperRunnerConfig.get_config(tmp_dir)
@@ -195,7 +215,7 @@ def test_space_keeper_runner(tmp_dir, mocker) -> None:
 
         # checking the runner did not switch to error mode
         time.sleep(0.5)
-        exception_on_error_state(SpaceKeeperRunner.__name__)
+        assert not had_error(SpaceKeeperRunner.__name__)
 
         # target folder is empty, nothing happening
         wait_for(lambda: mocked_free_space.call_count > 0, True)
@@ -216,6 +236,5 @@ def test_space_keeper_runner(tmp_dir, mocker) -> None:
         remaining_files = _list_files(tmp_dir)
         assert len(remaining_files) == nb_files_ok
         assert set(remaining_files) == set(new_files + [first_files[-1]])
-
         # checking the runner did not switch to error mode
-        exception_on_error_state(SpaceKeeperRunner.__name__)
+        assert not had_error(SpaceKeeperRunner.__name__)

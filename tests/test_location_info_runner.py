@@ -4,10 +4,14 @@ from typing import Generator
 import pytest
 from nightskycam.location_info.runner import LocationInfoRunner
 from nightskycam.utils.location_info import LocationInfo, get_location_info
-from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
-                                          exception_on_error_state,
-                                          get_manager, runner_started,
-                                          wait_for)
+from nightskycam.utils.test_utils import (
+    ConfigTester,
+    configuration_test,
+    had_error,
+    get_manager,
+    runner_started,
+    wait_for,
+)
 from nightskycam.utils.weather import Weather, get_weather
 from nightskyrunner.config import Config
 from nightskyrunner.shared_memory import SharedMemory
@@ -153,7 +157,7 @@ def test_location_info_runner(
         wait_for(_memory_written, True, args=(memory_key,))
         # checking the location info runner has not switched to
         # error state
-        exception_on_error_state(LocationInfoRunner.__name__)
+        assert not had_error(LocationInfoRunner.__name__)
 
         # checking the memory content is as expected
         memory = SharedMemory.get(memory_key)

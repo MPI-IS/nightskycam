@@ -13,15 +13,23 @@ from typing import Any, Dict, Generator, List, Optional, Tuple
 
 import numpy as np
 import pytest
-from nightskycam.process.runner import (ImageProcessRunner, _process,
-                                        _save_files)
+from nightskycam.process.runner import (
+    ImageProcessRunner,
+    _process,
+    _save_files,
+)
 from nightskycam.process.stretch import stretch_methods
 from nightskycam.utils.file_saving import save_npy, supported_file_formats
 from nightskycam.utils.filename import get_filename
-from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
-                                          exception_on_error_state,
-                                          get_manager, get_runner_error,
-                                          runner_started, wait_for)
+from nightskycam.utils.test_utils import (
+    ConfigTester,
+    configuration_test,
+    had_error,
+    get_manager,
+    get_runner_error,
+    runner_started,
+    wait_for,
+)
 from nightskyrunner.config import Config
 
 
@@ -29,7 +37,11 @@ def _darkframes_file() -> Path:
     # there is a darkframe file in the "darkframes" subfolder of the
     # test folder.
 
-    p = Path(os.path.abspath(__file__)).parent / "darkframes" / "darkframes.hdf5"
+    p = (
+        Path(os.path.abspath(__file__)).parent
+        / "darkframes"
+        / "darkframes.hdf5"
+    )
     if not p.is_file():
         raise FileNotFoundError(
             f"failed to find darkframes file {p}, required for the tests"
@@ -80,7 +92,9 @@ def _get_camera_like_image(
         return rng.random(camera_shape, dtype=dtype)
     elif np.issubdtype(dtype, np.integer):
         max_val = np.iinfo(dtype).max
-        return rng.integers(low=0, high=max_val, size=camera_shape, dtype=dtype)
+        return rng.integers(
+            low=0, high=max_val, size=camera_shape, dtype=dtype
+        )
     else:
         raise ValueError(f"Unsupported dtype: {dtype}")
 
@@ -128,10 +142,14 @@ class _ImagesWriter:
         meta = _get_meta(meta_temperature, meta_exposure)
         for _ in range(nb_files):
             self._nb_files += 1
-            next_date = self._start_date + timedelta(minutes=5 * self._nb_files)
+            next_date = self._start_date + timedelta(
+                minutes=5 * self._nb_files
+            )
             filename = get_filename(self._system_name, next_date)
             image = _get_camera_like_image()
-            img_path, meta_path = save_npy(image, meta, filename, self._target_folder)
+            img_path, meta_path = save_npy(
+                image, meta, filename, self._target_folder
+            )
             r.append((img_path, meta_path))
         return r
 
@@ -228,7 +246,7 @@ def _test_manager_config(config: Config) -> None:
 
     with get_manager((ImageProcessRunner, config)):
         wait_for(runner_started, True, args=(ImageProcessRunner.__name__,))
-        exception_on_error_state(ImageProcessRunner.__name__)
+        assert not had_error(ImageProcessRunner.__name__)
         iw = _ImagesWriter(Path(str(config["source_folder"])))
         iw.write(
             1,
@@ -244,13 +262,15 @@ def _test_manager_config(config: Config) -> None:
             )
         except RuntimeError:
             error_message = get_runner_error(ImageProcessRunner.__name__)
-            error_message_ = f"error:\n{error_message}" if error_message else ""
+            error_message_ = (
+                f"error:\n{error_message}" if error_message else ""
+            )
             error = str(
                 f"this configuration failed:\n{pprint.pformat(config)}\n"
                 f"{error_message_}"
             )
             raise RuntimeError(error)
-        exception_on_error_state(ImageProcessRunner.__name__)
+        assert not had_error(ImageProcessRunner.__name__)
 
 
 def test_runner(tmp_dirs) -> None:
@@ -301,7 +321,6 @@ def test_runner(tmp_dirs) -> None:
             "jpeg_quality": 95,
             "darkframes": "None",
         },
-
     ]
     base_config = {
         "frequency": 5.0,
@@ -344,7 +363,9 @@ def _test_config(
             image, _ = _process(config, npy_file, meta_file)
             _save_files(config, image, {}, filename, destination_folder)
             assert (destination_folder / f"{filename}.toml").is_file()
-            assert (destination_folder / f"{filename}.{config['fileformat']}").is_file()
+            assert (
+                destination_folder / f"{filename}.{config['fileformat']}"
+            ).is_file()
     except Exception as e:
         error = str(
             f"this configuration failed:\n{pprint.pformat(config)}\n"

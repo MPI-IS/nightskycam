@@ -14,10 +14,14 @@ from nightskycam.cams import utils
 from nightskycam.cams.runner import CamRunner
 from nightskycam.dummycams.runner import DummyCamRunner
 from nightskycam.location_info.runner import LocationInfoRunner
-from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
-                                          exception_on_error_state,
-                                          get_manager, runner_started,
-                                          wait_for)
+from nightskycam.utils.test_utils import (
+    ConfigTester,
+    configuration_test,
+    had_error,
+    get_manager,
+    runner_started,
+    wait_for,
+)
 from nightskyrunner.config import Config
 from nightskyrunner.shared_memory import SharedMemory
 from nightskyrunner.status import State, wait_for_status
@@ -231,7 +235,9 @@ def test_get_local_info(reset_memory) -> None:
     assert get_weather is None
     assert get_cloud_cover is None
 
-    def _wait_for_local_info(night: bool, weather: str, cloud_cover: int) -> bool:
+    def _wait_for_local_info(
+        night: bool, weather: str, cloud_cover: int
+    ) -> bool:
         get_night, get_weather, get_cloud_cover = utils.get_local_info()
         return all(
             [
@@ -252,7 +258,9 @@ def test_get_local_info(reset_memory) -> None:
     wait_for(_wait_for_local_info, True, args=(night, weather, cloud_cover))
 
     time.sleep(0.2)
-    get_night, get_weather, get_cloud_cover = utils.get_local_info(deprecation=0.15)
+    get_night, get_weather, get_cloud_cover = utils.get_local_info(
+        deprecation=0.15
+    )
     assert get_night is None
     assert get_weather is None
     assert get_cloud_cover is None
@@ -260,7 +268,9 @@ def test_get_local_info(reset_memory) -> None:
 
 class _RunnerConfig:
     @classmethod
-    def get_config(cls, destination_folder: Path, unsupported: bool = False) -> Config:
+    def get_config(
+        cls, destination_folder: Path, unsupported: bool = False
+    ) -> Config:
         if unsupported:
             return {
                 "frequency": 0.0,
@@ -349,9 +359,9 @@ def test_cam_runner(tmp_dir) -> None:
         # pictures in tmp_dir
         wait_for(runner_started, True, args=(DummyCamRunner.__name__,))
         wait_for_status(DummyCamRunner.__name__, State.running, timeout=2.0)
-        exception_on_error_state(DummyCamRunner.__name__)
+        assert not had_error(DummyCamRunner.__name__)
         wait_for(_image_generated, True, args=(tmp_dir,))
-        exception_on_error_state(DummyCamRunner.__name__)
+        assert not had_error(DummyCamRunner.__name__)
 
 
 def test_wait_duration() -> None:
@@ -394,4 +404,4 @@ def test_no_local_info(tmp_dir) -> None:
     with get_manager((DummyCamRunner, config)):
         wait_for(runner_started, True, args=(DummyCamRunner.__name__,))
         wait_for_status(DummyCamRunner.__name__, State.running, timeout=2.0)
-        exception_on_error_state(DummyCamRunner.__name__)
+        assert not had_error(DummyCamRunner.__name__)
