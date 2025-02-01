@@ -74,6 +74,53 @@ class AsiCamera(Camera):
     def cooler_off(self) -> None:
         self._camera.set_control("CoolerOn", 0)
 
+    def _configure_inactive(self, config: Config) -> List[str]:
+        # not active, but maybe the configuration set a key
+        # "InactiveTargetTemp" which set the desired temperature
+        # when inactive. In this case cooler should be 'on' and
+        # TargetTemp set.
+
+        if "InactiveCoolerOn" not in config:
+            self.cooler_off()
+            return []
+        inactive_cooler_on = config["InactiveCoolerOn"]
+        if not type(inactive_cooler_on) == bool:
+            self.cooler_off()
+            return [
+                str(
+                    f"unexpected value for key 'InactiveCoolerOn', expected bool, got {inactive_cooler_on}"
+                )
+            ]
+        if not inactive_cooler_on:
+            self.cooler_off()
+            return []
+        try:
+            inactive_target_temp = config["InactiveTargetTemp"]
+        except KeyError:
+            self.cooler_off()
+            return [
+                str(
+                    "InactiveCoolerOn has been set, but the corresponding InactiveTargetTemp key is missing"
+                )
+            ]
+        if not type(inactive_target_temp) == int:
+            self.cooler_off()
+            return [
+                str(
+                    f"unexpected value for key 'InactiveTargetTemp', expected int, got {inactive_target_temp}"
+                )
+            ]
+        try:
+            self._camera.set_control("TargetTemp", inactive_target_temp)
+            self.cooler_on()
+            return []
+        except Exception as e:
+            return [
+                str(
+                    f"failed to set the camera temperature to {inactive_target_temp}: {e}"
+                )
+            ]
+
     def configure(self, active: bool, config: Config) -> List[str]:
         """
         Configure the camera (controllables and ROI) based on
@@ -84,33 +131,9 @@ class AsiCamera(Camera):
           List of issues encountered when configuring the camera (empty
           if not issues)
         """
-        issues: List[str] = []
         if not active:
-            # not active, but maybe the configuration set a key
-            # "InactiveTargetTemp" which set the desired temperature
-            # when inactive. In this case cooler should be 'on' and
-            # TargetTemp set.
-            inactive_target_temp: Optional[Union[int, bool]]
-            try:
-                inactive_target_temp = config["InactiveTargetTemp"]
-            except KeyError:
-                inactive_target_temp = None
-            if type(inactive_target_temp) == int:
-                self._camera.set_control("TargetTemp", inactive_target_temp)
-            else:
-                if (
-                    type(inactive_target_temp) is bool and inactive_target_temp
-                ) or type(inactive_target_temp) is not bool:
-                    issues.append(
-                        "invalid value for configuration key 'InactiveTargetTemp': "
-                        f"{inactive_target_temp} (should be an int)"
-                    )
-            if inactive_target_temp is None or issues:
-                self.cooler_off()
-            else:
-                self.cooler_on()
-            return issues
-
+            return self._configure_inactive(config)
+        issues: List[str] = []
         for key in _controllables:
             try:
                 self._camera.set_control(key, config[key])

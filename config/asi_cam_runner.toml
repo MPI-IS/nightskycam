@@ -18,10 +18,6 @@ HighSpeedMode = false
 MonoBin = false
 Offset = 8
 TargetTemp = 0
-# target temperature of the cooler
-# when the camera is inactive. Set
-# to an int if desired.
-InactivateTargetTemp = false
 WB_B = 95
 WB_R = 52
 start_x = 0
@@ -30,3 +26,8 @@ width = 4144
 height = 2822
 bins = 1
 types = "raw16"
+# use this if you wish to use
+# the camera's cooler also
+# when the camera is inactive
+InactiveCoolerOn = false
+InactivateTargetTemp = 15
