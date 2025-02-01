@@ -2,6 +2,7 @@
 Module defining the AsiCamera, the camera used by the AsiCameraRunner.
 """
 
+from typing import Union, Optional
 from typing import Any, Dict, List, Tuple
 
 import nptyping as npt
@@ -83,10 +84,33 @@ class AsiCamera(Camera):
           List of issues encountered when configuring the camera (empty
           if not issues)
         """
-        if not active:
-            self.cooler_off()
-            return []
         issues: List[str] = []
+        if not active:
+            # not active, but maybe the configuration set a key
+            # "InactiveTargetTemp" which set the desired temperature
+            # when inactive. In this case cooler should be 'on' and
+            # TargetTemp set.
+            inactive_target_temp: Optional[Union[int, bool]]
+            try:
+                inactive_target_temp = config["InactiveTargetTemp"]
+            except KeyError:
+                inactive_target_temp = None
+            if type(inactive_target_temp) == int:
+                self._camera.set_control("TargetTemp", inactive_target_temp)
+            else:
+                if (
+                    type(inactive_target_temp) is bool and inactive_target_temp
+                ) or type(inactive_target_temp) is not bool:
+                    issues.append(
+                        "invalid value for configuration key 'InactiveTargetTemp': "
+                        f"{inactive_target_temp} (should be an int)"
+                    )
+            if inactive_target_temp is None or issues:
+                self.cooler_off()
+            else:
+                self.cooler_on()
+            return issues
+
         for key in _controllables:
             try:
                 self._camera.set_control(key, config[key])
