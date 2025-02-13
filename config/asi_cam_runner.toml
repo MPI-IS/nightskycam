@@ -26,3 +26,8 @@ width = 4144
 height = 2822
 bins = 1
 types = "raw16"
+# use this if you wish to use
+# the camera's cooler also
+# when the camera is inactive
+InactiveCoolerOn = false
+InactivateTargetTemp = 15

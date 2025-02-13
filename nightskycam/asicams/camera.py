@@ -2,6 +2,7 @@
 Module defining the AsiCamera, the camera used by the AsiCameraRunner.
 """
 
+from typing import Union, Optional
 from typing import Any, Dict, List, Tuple
 
 import nptyping as npt
@@ -73,6 +74,53 @@ class AsiCamera(Camera):
     def cooler_off(self) -> None:
         self._camera.set_control("CoolerOn", 0)
 
+    def _configure_inactive(self, config: Config) -> List[str]:
+        # not active, but maybe the configuration set a key
+        # "InactiveTargetTemp" which set the desired temperature
+        # when inactive. In this case cooler should be 'on' and
+        # TargetTemp set.
+
+        if "InactiveCoolerOn" not in config:
+            self.cooler_off()
+            return []
+        inactive_cooler_on = config["InactiveCoolerOn"]
+        if not type(inactive_cooler_on) == bool:
+            self.cooler_off()
+            return [
+                str(
+                    f"unexpected value for key 'InactiveCoolerOn', expected bool, got {inactive_cooler_on}"
+                )
+            ]
+        if not inactive_cooler_on:
+            self.cooler_off()
+            return []
+        try:
+            inactive_target_temp = config["InactiveTargetTemp"]
+        except KeyError:
+            self.cooler_off()
+            return [
+                str(
+                    "InactiveCoolerOn has been set, but the corresponding InactiveTargetTemp key is missing"
+                )
+            ]
+        if not type(inactive_target_temp) == int:
+            self.cooler_off()
+            return [
+                str(
+                    f"unexpected value for key 'InactiveTargetTemp', expected int, got {inactive_target_temp}"
+                )
+            ]
+        try:
+            self._camera.set_control("TargetTemp", inactive_target_temp)
+            self.cooler_on()
+            return []
+        except Exception as e:
+            return [
+                str(
+                    f"failed to set the camera temperature to {inactive_target_temp}: {e}"
+                )
+            ]
+
     def configure(self, active: bool, config: Config) -> List[str]:
         """
         Configure the camera (controllables and ROI) based on
@@ -84,8 +132,7 @@ class AsiCamera(Camera):
           if not issues)
         """
         if not active:
-            self.cooler_off()
-            return []
+            return self._configure_inactive(config)
         issues: List[str] = []
         for key in _controllables:
             try:
