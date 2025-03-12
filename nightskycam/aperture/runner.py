@@ -164,9 +164,8 @@ class ApertureRunner(ThreadRunner):
         try:
             pause = config["pause"]
         except KeyError:
-            raise RuntimeError(
-                "ApertureRunner: the configuration key 'pause' (bool) is missing"
-            )
+            # pause key is optional and false by default
+            pause = False
         if not type(pause) == bool:
             raise TypeError(
                 "configuration for 'pause' should be a bool, "
