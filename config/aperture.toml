@@ -1,5 +1,25 @@
 frequency = 0.1
+
+# if false, the aperture will be always full open
+# (no matter the configuration values for the other
+#  configuration key).
+# Note: the value of 'focus' is used wether or not
+# 'use' is true or false.
 use = true
+
+# if true, the aperture will open when the camera takes
+# picture, and be closed otherwise (not matter the configuration
+# values for 'start_time' and 'stop_time'
 use_zwo_asi = true
+
+# if use is true and use_zwo_asi is false, the aperture
+# will be close between start and stop time (i.e. 'day',
+# to protect the lens of the sun light), and open the rest of
+# the time (i.e. 'night', when the camera may be taking picture
+# of the sky)
 start_time = "10:00"
-end_time = "16:00"
+stop_time = "16:00"
+
+# to specify no matter the other configuration values !
+# the focus of the camera when taking pictures.
+focus = 750
