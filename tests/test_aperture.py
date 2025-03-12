@@ -142,6 +142,7 @@ class _RunnerConfig:
                 "start_time": "10-00",  # not expected format
                 "stop_time": "noon",  # not supported
                 "focus": -600,  # out of bound
+                "pause": 25,  # not a bool
             }
         else:
             return {
@@ -151,6 +152,7 @@ class _RunnerConfig:
                 "start_time": "10:00",
                 "stop_time": "17:30",
                 "focus": 600,
+                "pause": False,
             }
 
     @classmethod
@@ -192,6 +194,7 @@ def test_open_close(tmp_dir) -> None:
         "start_time": "10:00",
         "stop_time": "17:30",
         "focus": 600,
+        "pause": False,
     }
     config_file = tmp_dir / "test_aperture_config.toml"
     _write_test_runner_config(
@@ -252,6 +255,12 @@ def test_open_close(tmp_dir) -> None:
         wait_for(_aperture_closed, True)
         # stop using the aperture adapter altogether
         config["use"] = False
+        _write_test_runner_config(config, config_file)
+        wait_for(_aperture_opened, True)
+        # sanity check the runner is still running
+        wait_for_status(ApertureRunner.__name__, State.running, timeout=2.0)
+        # setting to pause, aperture should remain as such
+        config["pause"] = True
         _write_test_runner_config(config, config_file)
         wait_for(_aperture_opened, True)
         # sanity check the runner is still running

@@ -160,6 +160,26 @@ class ApertureRunner(ThreadRunner):
         config = self.get_config()
 
         status_entries = ApertureRunnerEntries()
+
+        try:
+            pause = config["pause"]
+        except KeyError:
+            raise RuntimeError(
+                "ApertureRunner: the configuration key 'pause' (bool) is missing"
+            )
+        if not type(pause) == bool:
+            raise TypeError(
+                "configuration for 'pause' should be a bool, "
+                f"got {pause} ({type(pause)}) instead"
+            )
+
+        if pause:
+            status_entries["pause"] = True
+            self._status.entries(status_entries)
+            return
+        else:
+            status_entries["pause"] = False
+
         try:
             use = config["use"]
         except KeyError:
