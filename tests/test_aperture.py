@@ -16,11 +16,8 @@ from nightskyrunner.config import Config
 from nightskyrunner.status import State, Status, wait_for_status
 
 from nightskycam.aperture.runner import (
-    Aperture,
     ApertureRunner,
     adapter,
-    set_aperture,
-    set_focus,
 )
 from nightskycam.utils.test_utils import (
     ConfigTester,
@@ -37,30 +34,13 @@ from nightskycam.utils.test_utils import (
 
 
 class _MockedHardware:
-    activated: bool = False
     focus: int = -1
-    aperture: Aperture = Aperture.MIN
+    aperture: adapter.Aperture = adapter.Aperture.MIN
 
 
-def mock_set_focus(target_value: int) -> None:
-    if not _MockedHardware.activated:
-        raise RuntimeError("hardware not activated")
-    _MockedHardware.focus = target_value
-
-
-def mock_set_aperture(target_value: Aperture) -> None:
-    if not _MockedHardware.activated:
-        raise RuntimeError("hardware not activated")
-    _MockedHardware.aperture = target_value
-
-
-@contextmanager
-def mock_adapter():
-    try:
-        _MockedHardware.activated = True
-        yield
-    finally:
-        _MockedHardware.activated = False
+def mock_set(focus: int, aperture: adapter.Aperture) -> None:
+    _MockedHardware.focus = focus
+    _MockedHardware.aperture = aperture
 
 
 def _datetime_now_time():
@@ -68,28 +48,8 @@ def _datetime_now_time():
 
 
 @pytest.fixture(autouse=True)
-def patch_set_focus(mocker):
-    mocker.patch(__name__ + ".set_focus", side_effect=mock_set_focus)
-    mocker.patch(
-        "nightskycam.aperture.runner.set_focus", side_effect=mock_set_focus
-    )
-
-
-@pytest.fixture(autouse=True)
-def patch_set_aperture(mocker):
-    mocker.patch(__name__ + ".set_aperture", side_effect=mock_set_aperture)
-    mocker.patch(
-        "nightskycam.aperture.runner.set_aperture",
-        side_effect=mock_set_aperture,
-    )
-
-
-@pytest.fixture(autouse=True)
-def patch_adapter(mocker):
-    mocker.patch(__name__ + ".adapter", side_effect=mock_adapter)
-    mocker.patch(
-        "nightskycam.aperture.runner.adapter", side_effect=mock_adapter
-    )
+def patch_set(mocker):
+    mocker.patch(__name__ + ".adapter.set", side_effect=mock_set)
 
 
 @pytest.fixture(autouse=True)
@@ -105,13 +65,9 @@ def patch_datetime_now_time(mocker):
 
 
 def test_mocked_functions() -> None:
-    with pytest.raises(RuntimeError):
-        set_focus(100)
-    with adapter():
-        set_focus(400)
-        set_aperture(Aperture.V1)
+    adapter.set(400, adapter.Aperture.V1)
     assert _MockedHardware.focus == 400
-    assert _MockedHardware.aperture == Aperture.V1
+    assert _MockedHardware.aperture == adapter.Aperture.V1
 
 
 # --------------------------------------------------------------
@@ -179,10 +135,10 @@ def test_open_close(tmp_dir) -> None:
             tomli_w.dump(config, f)
 
     def _aperture_closed() -> bool:
-        return _MockedHardware.aperture == Aperture.MIN
+        return _MockedHardware.aperture == adapter.Aperture.MIN
 
     def _aperture_opened() -> bool:
-        return _MockedHardware.aperture == Aperture.MAX
+        return _MockedHardware.aperture == adapter.Aperture.MAX
 
     def _focus_value() -> int:
         return _MockedHardware.focus

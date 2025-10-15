@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nightskycam"
-version = "0.1.21"
+version = "0.1.22"
 description = "taking pictures at night"
 authors = ["Vincent Berenz <vberenz@tuebingen.mpg.de>"]
 packages = [{ include = "nightskycam" }]
@@ -29,7 +29,7 @@ nightskyrunner = "^0.1.0"
 nightskycam-serialization = "^0.1.0"
 h5darkframes = "^0.1.5"
 typing-extensions = "^4.12.2"
-nightskycam-focus = "^0.1.0"
+nightskycam-focus = "0.1.8"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"

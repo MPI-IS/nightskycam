@@ -7,14 +7,8 @@ from datetime import time as datetime_time
 from enum import Enum
 from typing import Optional, cast
 
-from nightskycam_focus.adapter import (
-    MAX_FOCUS,
-    MIN_FOCUS,
-    Aperture,
-    adapter,
-    set_aperture,
-    set_focus,
-)
+from nightskycam_focus import adapter
+
 from nightskycam_serialization.status import (
     ApertureRunnerEntries,
     CamRunnerEntries,
@@ -111,9 +105,7 @@ class ApertureRunner(ThreadRunner):
         if self._opening in (Opening.OPENED, Opening.UNSET):
             self.log(Level.info, f"closing aperture: {reason}")
             try:
-                with adapter():
-                    set_focus(focus)
-                    set_aperture(Aperture.MIN)
+                adapter.set(focus, adapter.Aperture.MIN)
             except Exception as e:
                 raise RuntimeError(f"failed to close aperture: {e}")
             else:
@@ -125,17 +117,11 @@ class ApertureRunner(ThreadRunner):
             or self._focus != focus
             or self._opening in (Opening.CLOSED, Opening.UNSET)
         ):
-            self.log(
-                Level.info, f"opening aperture (focus: {focus}): {reason}"
-            )
+            self.log(Level.info, f"opening aperture (focus: {focus}): {reason}")
             try:
-                with adapter():
-                    set_focus(focus)
-                    set_aperture(Aperture.MAX)
+                adapter.set(focus, adapter.Aperture.MAX)
             except Exception as e:
-                raise RuntimeError(
-                    f"failed to set focus and open aperture: {e}"
-                )
+                raise RuntimeError(f"failed to set focus and open aperture: {e}")
             else:
                 self._opening = Opening.OPENED
                 self._focus = focus
@@ -208,38 +194,32 @@ class ApertureRunner(ThreadRunner):
             focus = config["focus"]
         except KeyError:
             raise RuntimeError(
-                f"ApertureRunner: the configuration key 'focus' (int between {MIN_FOCUS} and {MAX_FOCUS}) is missing"
+                f"ApertureRunner: the configuration key 'focus' (int between {adapter.MIN_FOCUS} and {adapter.MAX_FOCUS}) is missing"
             )
         if not type(focus) == int:
             raise TypeError(
                 "configuration for focus should be an int, "
                 f"got {focus} ({type(focus)}) instead"
             )
-        if focus < MIN_FOCUS or focus > MAX_FOCUS:
+        if focus < adapter.MIN_FOCUS or focus > adapter.MAX_FOCUS:
             raise ValueError(
-                f"configuration for focus should be between {MIN_FOCUS} and {MAX_FOCUS}"
+                f"configuration for focus should be between {adapter.MIN_FOCUS} and {adapter.MAX_FOCUS}"
                 f"got {focus}"
             )
         status_entries["focus"] = focus
 
         # aperture not used, keep open
         if not use:
-            return self._return(
-                status_entries, focus, True, "aperture not used"
-            )
+            return self._return(status_entries, focus, True, "aperture not used")
 
         # opening / closing based on the status of the camera
         if use_zwo_asi:
             active: Optional[bool] = self._camera_active()
             if active is not None:
                 if active:
-                    return self._return(
-                        status_entries, focus, True, "camera active"
-                    )
+                    return self._return(status_entries, focus, True, "camera active")
                 else:
-                    return self._return(
-                        status_entries, focus, False, "camera inactive"
-                    )
+                    return self._return(status_entries, focus, False, "camera inactive")
 
         # if not using use_zwo_asi, then must be using start/end time
         time_now = datetime.now().time()
