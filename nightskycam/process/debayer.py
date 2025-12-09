@@ -1,5 +1,5 @@
 import cv2
-import nptyping as npt
+import numpy.typing as npt
 
 DEBAYER_CODE = "COLOR_BAYER_BG2BGR"
 

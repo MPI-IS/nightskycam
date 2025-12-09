@@ -4,8 +4,8 @@ Module defining the stretch method.
 
 from typing import Type, cast
 
-import nptyping as npt
 import numpy as np
+import numpy.typing as npt
 from astropy import visualization
 from astropy.visualization import ImageNormalize, MinMaxInterval
 from auto_stretch.stretch import Stretch

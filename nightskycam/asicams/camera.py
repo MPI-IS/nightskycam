@@ -2,10 +2,9 @@
 Module defining the AsiCamera, the camera used by the AsiCameraRunner.
 """
 
-from typing import Union, Optional
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
-import nptyping as npt
+import numpy.typing as npt
 from camera_zwo_asi import Camera as asi
 from camera_zwo_asi import ImageType
 from nightskyrunner.config import Config

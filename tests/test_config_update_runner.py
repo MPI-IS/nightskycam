@@ -8,16 +8,22 @@ from typing import Generator
 
 import pytest
 import tomli_w
-from nightskycam.config_update.runner import ConfigUpdateRunner
-from nightskycam.tests.runner import TestRunner
-from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
-                                          get_manager, runner_started,
-                                          wait_for, websocket_connection_test)
-from nightskycam.utils.websocket_manager import websocket_server
 from nightskycam_serialization.config import serialize_config_update
 from nightskyrunner.config import Config
 from nightskyrunner.shared_memory import SharedMemory
 from nightskyrunner.status import State, Status, wait_for_status
+
+from nightskycam.config_update.runner import ConfigUpdateRunner
+from nightskycam.tests.runner import TestRunner
+from nightskycam.utils.test_utils import (
+    ConfigTester,
+    configuration_test,
+    get_manager,
+    runner_started,
+    wait_for,
+    websocket_connection_test,
+)
+from nightskycam.utils.websocket_manager import websocket_server
 
 URL = "127.0.0.1"
 PORT = 8765

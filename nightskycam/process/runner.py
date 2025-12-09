@@ -7,8 +7,8 @@ from pathlib import Path
 from pickle import UnpicklingError
 from typing import Any, Dict, List, Optional, Tuple
 
-import nptyping as npt
 import numpy as np
+import numpy.typing as npt
 import tomli
 from nightskycam_serialization.status import ImageProcessRunnerEntries
 from nightskyrunner.config import Config
@@ -18,8 +18,14 @@ from nightskyrunner.runner import ProcessRunner, status_error
 from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
-from ..utils.file_saving import (extend_meta, get_cv2_config, read_files, save,
-                                 save_npy, supported_file_formats)
+from ..utils.file_saving import (
+    extend_meta,
+    get_cv2_config,
+    read_files,
+    save,
+    save_npy,
+    supported_file_formats,
+)
 from .bits_conversion import to_8bits
 from .darkframes import darkframes
 from .debayer import debayer
@@ -98,7 +104,7 @@ def _process(
     darkframes_file: Optional[Path]
     try:
         df = str(config["darkframes"])
-        if not df or df=="None":
+        if not df or df == "None":
             darkframes_file = None
         else:
             darkframes_file = Path(df)

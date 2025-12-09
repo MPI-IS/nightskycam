@@ -62,7 +62,10 @@ class CommandRunner(ProcessRunner):
         else:
             remote_subdir = Path(str(remote_subdir_))
         nightskycam = str(config["nightskycam"])
-        remote_subdir = remote_subdir / nightskycam / "snapshot"
+        if remote_subdir is not None:
+            remote_subdir = remote_subdir / nightskycam / "snapshot"
+        else:
+            remote_subdir = Path(nightskycam) / "snapshot"
         return FtpConfig(
             str(config["ftp_username"]),
             str(config["ftp_password"]),

@@ -21,8 +21,8 @@ from nightskycam.space_keeper.utils import (
 from nightskycam.utils.test_utils import (
     ConfigTester,
     configuration_test,
-    had_error,
     get_manager,
+    had_error,
     runner_started,
     wait_for,
 )
@@ -139,16 +139,12 @@ def test_file_size(tmp_dir):
         assert file_size(path) == filesize
 
 
-def _write_files(
-    target_folder: Path, nb_files: int, filesize_bits: int
-) -> List[Path]:
+def _write_files(target_folder: Path, nb_files: int, filesize_bits: int) -> List[Path]:
     r: List[Path] = []
     letters = string.ascii_letters
     for _ in range(nb_files):
         filename = "".join(random.choice(letters) for i in range(8))
-        r.append(
-            _create_file_with_size(target_folder, filename, filesize_bits)
-        )
+        r.append(_create_file_with_size(target_folder, filename, filesize_bits))
         # making sure files do not have the same timestamp
         time.sleep(0.01)
 
@@ -185,9 +181,7 @@ def test_space_keeper_runner(tmp_dir, mocker) -> None:
         # does not take the real size of file into account.
         threshold_bits = convert_mb_to_bits(threshold_MB)
         nb_files = len(_list_files(target_dir))
-        free_space_bits = threshold_bits + filesize_bits * (
-            nb_files_ok - nb_files
-        )
+        free_space_bits = threshold_bits + filesize_bits * (nb_files_ok - nb_files)
         return free_space_bits
 
     config: Config = _SpaceKeeperRunnerConfig.get_config(tmp_dir)

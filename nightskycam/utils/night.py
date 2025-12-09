@@ -1,5 +1,5 @@
 """
-Module defining the 'is_night' method, which 
+Module defining the 'is_night' method, which
 determines if it is currently night at a given location
 (using the [ephem](https://rhodesmill.org/pyephem/) package).
 """

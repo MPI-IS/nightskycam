@@ -7,7 +7,7 @@ See:
 
 - [nightskycam.asicams.runner.AsiCamRunner](): for zwo-asi cameras
 - [nightskycam.usbcams.runner.UsbCamRunner](): for usb webcams
-- [nightskycam.dummycams.runner.DummyCamRunner](): virtual camera for 
+- [nightskycam.dummycams.runner.DummyCamRunner](): virtual camera for
     creating artificial images, for testing
 """
 

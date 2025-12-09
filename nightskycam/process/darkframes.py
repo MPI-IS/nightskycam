@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import h5darkframes as dark
-import nptyping as npt
+import numpy.typing as npt
 from h5darkframes import substract
 
 

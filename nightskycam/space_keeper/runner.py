@@ -96,9 +96,7 @@ class SpaceKeeperRunner(ThreadRunner):
 
         # if disk is too full, to_delete will list the files to
         # delete
-        to_delete = files_to_delete(
-            Path(folder), convert_mb_to_bits(threshold_MB)
-        )
+        to_delete = files_to_delete(Path(folder), convert_mb_to_bits(threshold_MB))
 
         self._status.entries(
             SpaceKeeperRunnerEntries(

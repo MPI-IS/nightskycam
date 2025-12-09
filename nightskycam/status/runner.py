@@ -5,8 +5,7 @@ Module defining the StatusRunner
 from pathlib import Path
 from typing import List, Optional
 
-from nightskycam_serialization.status import (StatusRunnerEntries,
-                                              serialize_status)
+from nightskycam_serialization.status import StatusRunnerEntries, serialize_status
 from nightskyrunner.config_getter import ConfigGetter
 from nightskyrunner.runner import ThreadRunner, status_error
 from nightskyrunner.status import Status, StatusDict

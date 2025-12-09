@@ -1,5 +1,5 @@
 """
-Module for the read_config, is_active and get_local_info 
+Module for the read_config, is_active and get_local_info
 functions used by CamRunner.
 """
 

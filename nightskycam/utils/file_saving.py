@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import cv2
-import nptyping as npt
 import numpy as np
+import numpy.typing as npt
 import tomli
 import tomli_w
 

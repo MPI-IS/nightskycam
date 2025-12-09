@@ -15,9 +15,11 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 import tomli
 import tomli_w
-from nightskycam_serialization.command import (CommandResult,
-                                               deserialize_command,
-                                               serialize_command_result)
+from nightskycam_serialization.command import (
+    CommandResult,
+    deserialize_command,
+    serialize_command_result,
+)
 from nightskycam_serialization.status import CommandRunnerEntries
 from nightskyrunner.status import Level, Status
 
@@ -300,8 +302,13 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         except OSError as e:
             # some strings can not be "cast" as path
             stdout_file = None
-            
-        if ftp_config and stdout_file_exists:
+
+        if (
+            ftp_config
+            and stdout_file_exists
+            and ftp_config.folder is not None
+            and stdout_file is not None
+        ):
             with get_ftp(ftp_config, ftp_config.folder) as ftp:
                 uploaded_size = ftp.upload(stdout_file, False)
             result.stdout = stdout_file.name
