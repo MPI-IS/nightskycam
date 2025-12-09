@@ -3,6 +3,7 @@ from queue import Queue
 from typing import List, Union
 
 import pytest
+
 from nightskycam.utils import websocket_manager as ws
 
 

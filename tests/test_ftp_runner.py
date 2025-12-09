@@ -6,19 +6,20 @@ from pathlib import Path
 from typing import Generator, List
 
 import pytest
+from nightskyrunner.config import Config
+from nightskyrunner.shared_memory import SharedMemory
+
 from nightskycam.ftp.runner import FtpRunner, _UploadSpeed
 from nightskycam.utils.filename import get_filename
 from nightskycam.utils.ftp import FtpConfig, FtpServer, get_ftp
 from nightskycam.utils.test_utils import (
     ConfigTester,
     configuration_test,
-    had_error,
     get_manager,
+    had_error,
     runner_started,
     wait_for,
 )
-from nightskyrunner.config import Config
-from nightskyrunner.shared_memory import SharedMemory
 
 
 @pytest.fixture
@@ -144,9 +145,7 @@ def test_ftp(ftp_server) -> None:
     config: FtpConfig = ftp_server
 
     if not config.folder:
-        raise ValueError(
-            "the configuration folder needs to be set for this test"
-        )
+        raise ValueError("the configuration folder needs to be set for this test")
 
     # the files will be copied in this subfolders
     # of the ftp server
@@ -277,12 +276,8 @@ class _FtpRunnerConfig:
         cls, system_name: str, remote_subdir: str, folder: Path
     ) -> ConfigTester:
         return ConfigTester(
-            cls.get_config(
-                system_name, remote_subdir, folder, unsupported=False
-            ),
-            cls.get_config(
-                system_name, remote_subdir, folder, unsupported=True
-            ),
+            cls.get_config(system_name, remote_subdir, folder, unsupported=False),
+            cls.get_config(system_name, remote_subdir, folder, unsupported=True),
         )
 
 
@@ -329,17 +324,13 @@ def test_ftp_runner(tmp_dir, ftp_server, reset_memory) -> None:
     Testing instances of FtpRunner behave as expected
     """
 
-    def _nb_files_decreased(
-        tmp_dir: Path, nb_files: int, nb_uploaded: int
-    ) -> bool:
+    def _nb_files_decreased(tmp_dir: Path, nb_files: int, nb_uploaded: int) -> bool:
         return len(_list_files(tmp_dir)) <= nb_files - nb_uploaded
 
     ftp_config: FtpConfig = ftp_server
     system_name = "test_system"
     remote_subdir = "test"
-    config: Config = _FtpRunnerConfig.get_config(
-        system_name, remote_subdir, tmp_dir
-    )
+    config: Config = _FtpRunnerConfig.get_config(system_name, remote_subdir, tmp_dir)
     nb_files = 50
     nb_uploaded = 6
     day = "2023_01_01"
@@ -357,9 +348,7 @@ def test_ftp_runner(tmp_dir, ftp_server, reset_memory) -> None:
         )
 
         # waiting for at least nb_uploaded files to be uploaded
-        wait_for(
-            _nb_files_decreased, True, args=(tmp_dir, nb_files, nb_uploaded)
-        )
+        wait_for(_nb_files_decreased, True, args=(tmp_dir, nb_files, nb_uploaded))
         assert not had_error(FtpRunner.__name__)
 
     # checking files have been uploaded

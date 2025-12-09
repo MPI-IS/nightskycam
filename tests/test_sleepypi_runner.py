@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import Generator, Optional, Tuple
 
 import pytest
+from nightskyrunner.config import Config
+from nightskyrunner.status import State, wait_for_status
+
 from nightskycam.sleepypi.runner import (
     SleepyPiRunner,
     _duration_to_event,
@@ -15,19 +18,15 @@ from nightskycam.sleepypi.runner import (
 from nightskycam.utils.test_utils import (
     ConfigTester,
     configuration_test,
-    had_error,
     get_manager,
+    had_error,
     runner_started,
     wait_for,
 )
-from nightskyrunner.config import Config
-from nightskyrunner.status import State, wait_for_status
 
 
 @pytest.fixture
-def tmp_dirs(
-    request, scope="function"
-) -> Generator[Tuple[Path, Path], None, None]:
+def tmp_dirs(request, scope="function") -> Generator[Tuple[Path, Path], None, None]:
     """
     Fixture yielding a temp directory and a temp file
     """
@@ -68,9 +67,7 @@ class _SleepyPiRunnerConfig:
             }
 
     @classmethod
-    def get_config_tester(
-        cls, ftp_folder: Path, tty_file: Path
-    ) -> ConfigTester:
+    def get_config_tester(cls, ftp_folder: Path, tty_file: Path) -> ConfigTester:
         return ConfigTester(
             cls.get_config(ftp_folder, tty_file, unsupported=False),
             cls.get_config(ftp_folder, tty_file, unsupported=True),
@@ -84,9 +81,7 @@ def test_configuration(tmp_dirs) -> None:
     """
     ftp_folder, tty_file = tmp_dirs
 
-    config_tester = _SleepyPiRunnerConfig.get_config_tester(
-        ftp_folder, tty_file
-    )
+    config_tester = _SleepyPiRunnerConfig.get_config_tester(ftp_folder, tty_file)
     configuration_test(SleepyPiRunner, config_tester, timeout=30.0)
 
 

@@ -3,9 +3,15 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-from nightskycam.utils.filename import (_day_format, _is_morning, _night_date,
-                                        get_date, get_filename,
-                                        is_date_filename, sort_by_night)
+from nightskycam.utils.filename import (
+    _day_format,
+    _is_morning,
+    _night_date,
+    get_date,
+    get_filename,
+    is_date_filename,
+    sort_by_night,
+)
 
 
 def test_dated_filename():

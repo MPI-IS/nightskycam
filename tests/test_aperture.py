@@ -9,16 +9,11 @@ from typing import Generator
 
 import pytest
 import tomli_w
-from nightskycam_serialization.status import (
-    AsiCamRunnerEntries,
-)
+from nightskycam_serialization.status import AsiCamRunnerEntries
 from nightskyrunner.config import Config
 from nightskyrunner.status import State, Status, wait_for_status
 
-from nightskycam.aperture.runner import (
-    ApertureRunner,
-    adapter,
-)
+from nightskycam.aperture.runner import ApertureRunner, adapter
 from nightskycam.utils.test_utils import (
     ConfigTester,
     configuration_test,
@@ -88,9 +83,7 @@ def tmp_dir(request, scope="function") -> Generator[Path, None, None]:
 
 class _RunnerConfig:
     @classmethod
-    def get_config(
-        cls, destination_folder: Path, unsupported: bool = False
-    ) -> Config:
+    def get_config(cls, destination_folder: Path, unsupported: bool = False) -> Config:
         if unsupported:
             return {
                 "use": 1,  # not a bool

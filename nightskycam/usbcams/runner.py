@@ -1,5 +1,5 @@
 """
-Module defining USBCamRunner, 
+Module defining USBCamRunner,
 a subclass of [nightskycam.cams.runner.CamRunner]()
 """
 

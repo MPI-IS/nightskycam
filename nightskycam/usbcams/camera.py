@@ -1,5 +1,5 @@
 """
-Module defining USBCamera, a subclass 
+Module defining USBCamera, a subclass
 of [nightskycam.cams.camera.Camera]()
 """
 

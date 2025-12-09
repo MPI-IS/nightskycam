@@ -6,15 +6,21 @@ from typing import Callable, Generator, Tuple
 
 import pytest
 import tomli
-from nightskycam.commands.runner import CommandRunner
-from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
-                                          get_manager, runner_started,
-                                          wait_for, websocket_connection_test)
-from nightskycam.utils.websocket_manager import websocket_server
 from nightskycam_serialization.command import serialize_command
 from nightskyrunner.config import Config
 from nightskyrunner.shared_memory import SharedMemory
 from nightskyrunner.status import State, wait_for_status
+
+from nightskycam.commands.runner import CommandRunner
+from nightskycam.utils.test_utils import (
+    ConfigTester,
+    configuration_test,
+    get_manager,
+    runner_started,
+    wait_for,
+    websocket_connection_test,
+)
+from nightskycam.utils.websocket_manager import websocket_server
 
 
 @pytest.fixture

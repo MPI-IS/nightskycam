@@ -81,7 +81,7 @@ def repetitive_starting_test() -> None:
     (The concrete case motivating the development of this test are StatusRunner
     sometimes failing to establish a websocket connection due to some SSL issue.)
     """
-    _set_log(level=Level.debug)
+    _set_log(level=logging.DEBUG)
 
     manager_toml = Path(__file__).parent.resolve() / "manager.toml"
     parser = argparse.ArgumentParser(

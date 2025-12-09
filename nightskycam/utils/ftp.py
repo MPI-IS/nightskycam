@@ -1,5 +1,5 @@
 """
-Module defining FTP servers and clients. 
+Module defining FTP servers and clients.
 Used by [nightskycam.ftp.runner.FtpRunner]() and
 related unit-tests.
 """
@@ -111,7 +111,7 @@ class _FTP_TLS(FTP_TLS):
         return conn, size
 
 
-Ftp: TypeAlias = Union[FTP, _FTP_TLS]
+FtpConnection: TypeAlias = Union[FTP, _FTP_TLS]
 
 
 def _simpler_connect(
@@ -160,34 +160,43 @@ def _connect(
     username: typing.Optional[str] = None,
     passwd: typing.Optional[str] = None,
     timeout: typing.Optional[float] = 10,
-) -> Ftp:
-    tls: bool
+) -> FtpConnection:
     if username is None or passwd is None:
-        ftp_class = FTP
-        tls = False
-    else:
-        ftp_class = _FTP_TLS
-        tls = True
-    ftp_instance = ftp_class(timeout=timeout)
-    try:
-        ftp_instance.connect(host, port=port)
-        if tls:
-            ftp_instance.login(user=username, passwd=passwd)
-            ftp_instance.prot_p()
-        else:
-            ftp_instance.login()
-    except Exception as e:
+        # Non-TLS connection
+        ftp_instance: FtpConnection = FTP(timeout=timeout)
         try:
-            return _simpler_connect(host, port, username, passwd, timeout)
-        except FTPError:
-            host_str = f"{host}:{port}"
-            if tls:
-                host_str = f"{host_str} (TLS)"
-            raise FTPError(f"failed to login to {host_str}: {e}")
+            if port is None:
+                ftp_instance.connect(host)
+            else:
+                ftp_instance.connect(host, port)
+            ftp_instance.login()
+        except Exception as e:
+            try:
+                return _simpler_connect(host, port, username, passwd, timeout)
+            except FTPError:
+                host_str = f"{host}:{port}"
+                raise FTPError(f"failed to login to {host_str}: {e}")
+    else:
+        # TLS connection
+        ftp_instance_tls = _FTP_TLS(timeout=timeout)
+        try:
+            if port is None:
+                ftp_instance_tls.connect(host)
+            else:
+                ftp_instance_tls.connect(host, port)
+            ftp_instance_tls.login(user=username, passwd=passwd)
+            ftp_instance_tls.prot_p()
+            ftp_instance = ftp_instance_tls
+        except Exception as e:
+            try:
+                return _simpler_connect(host, port, username, passwd, timeout)
+            except FTPError:
+                host_str = f"{host}:{port} (TLS)"
+                raise FTPError(f"failed to login to {host_str}: {e}")
     return ftp_instance
 
 
-def _cd(ftp: Ftp, remote_path: Path) -> None:
+def _cd(ftp: FtpConnection, remote_path: Path) -> None:
     # change the current remote ftp directory,
     # used internally by Ftp (see below)
 
@@ -203,7 +212,7 @@ def _cd(ftp: Ftp, remote_path: Path) -> None:
         raise FTPError(f"Failed to create/cd directory {remote_path}: " f"{e}")
 
 
-def _rmdir(ftp: Ftp, folder: str) -> None:
+def _rmdir(ftp: FtpConnection, folder: str) -> None:
     # delete the remote directory,
     # used internally by Ftp (see below)
 
@@ -239,7 +248,7 @@ class Ftp:
         self.upload_size: int = 0
         self.nb_uploaded_files: int = 0
 
-        self.ftp: Ftp = _connect(
+        self.ftp: FtpConnection = _connect(
             self.host,
             port=self.port,
             username=self.username,
