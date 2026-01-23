@@ -201,6 +201,8 @@ class LocationInfoRunner(ThreadRunner):
         wlan_info: Optional[WlanInfo] = get_wlan_info()
         if wlan_info is None:
             wlan = "not connected"
+        else:
+            wlan = str(wlan_info)
         location["wlan"] = str(wlan)
 
         # local time
