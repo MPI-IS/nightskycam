@@ -264,6 +264,7 @@ class _FtpRunnerConfig:
                 "host": "127.0.0.1",
                 "port": 2121,
                 "nightskycam": system_name,
+                "timeout": 10,
             }
 
     @classmethod

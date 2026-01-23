@@ -34,13 +34,15 @@ class FtpConfig:
         host: str = "127.0.0.1",
         port: int = 2121,
         folder: typing.Optional[Path] = None,
+        timeout: int = 300
     ):
         self.username = username
         self.passwd = passwd
         self.folder = folder
         self.host = host
         self.port = port
-
+        self.timeout = timeout
+        
     def __str__(self) -> str:
         s = ", ".join(
             [
@@ -253,6 +255,7 @@ class Ftp:
             port=self.port,
             username=self.username,
             passwd=self.passwd,
+            timeout=config.timeout,
         )
         _logger.debug(f"connected to {self.host}")
         if remote_path is not None:
