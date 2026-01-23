@@ -35,11 +35,6 @@ def get_wlan_info(interface: str = "wlan0") -> Optional[WlanInfo]:
         FileNotFoundError: If iwconfig is not installed
     """
     try:
-        # Get the wireless interface name if not provided
-        if interface is None:
-            interface = get_wireless_interface()
-            if not interface:
-                return None
 
         # Get information using iwconfig
         result = subprocess.run(
@@ -73,7 +68,5 @@ def get_wlan_info(interface: str = "wlan0") -> Optional[WlanInfo]:
 
         return WlanInfo(interface=interface, ssid=ssid, signal=signal, bitrate=bitrate)
 
-    except (subprocess.CalledProcessError, FileNotFoundError) as e:
-        raise
     except Exception:
         return None

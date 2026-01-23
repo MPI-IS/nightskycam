@@ -43,12 +43,17 @@ def _get_ftp_config(config: Config) -> FtpConfig:
         remote_subdir = None
     else:
         remote_subdir = Path(str(remote_subdir_))
+    try:
+        timeout = int(str(config["timeout"]))
+    except KeyError:
+        timeout = 300
     return FtpConfig(
         str(config["username"]),
         str(config["password"]),
         str(config["host"]),
         int(config["port"]),  # type: ignore
         folder=remote_subdir,
+        timeout=timeout
     )
 
 
