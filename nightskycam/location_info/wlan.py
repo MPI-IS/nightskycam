@@ -15,8 +15,8 @@ class WlanInfo:
 
     def __str__(self) -> str:
         if self.ssid == "Not connected":
-            return f"WlanInfo(interface={self.interface}, not connected)"
-        return f"WlanInfo(interface={self.interface}, ssid={self.ssid}, signal={self.signal}, bitrate={self.bitrate})"
+            return f"not connected"
+        return f"ssid={self.ssid}, signal={self.signal}, bitrate={self.bitrate}"
 
 
 def get_wlan_info(interface: str = "wlan0") -> Optional[WlanInfo]:
