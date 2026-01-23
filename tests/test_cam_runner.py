@@ -18,14 +18,9 @@ from nightskycam.cams import utils
 from nightskycam.cams.runner import CamRunner
 from nightskycam.dummycams.runner import DummyCamRunner
 from nightskycam.location_info.runner import LocationInfoRunner
-from nightskycam.utils.test_utils import (
-    ConfigTester,
-    configuration_test,
-    get_manager,
-    had_error,
-    runner_started,
-    wait_for,
-)
+from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
+                                          get_manager, had_error,
+                                          runner_started, wait_for)
 
 
 @pytest.fixture

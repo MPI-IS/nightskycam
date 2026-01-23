@@ -12,17 +12,9 @@ from nightskyrunner.runner import ThreadRunner, status_error
 from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
-from .utils import (
-    DiskSpaceInfo,
-    bits_to_human,
-    bytes_to_human,
-    convert_mb_to_bits,
-    disk_space_info,
-    disk_space_info_str,
-    files_to_delete,
-    folder_content,
-    to_GB,
-)
+from .utils import (DiskSpaceInfo, bits_to_human, bytes_to_human,
+                    convert_mb_to_bits, disk_space_info, disk_space_info_str,
+                    files_to_delete, folder_content, to_GB)
 
 
 @status_error

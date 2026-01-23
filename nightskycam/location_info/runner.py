@@ -20,6 +20,7 @@ from nightskycam.utils.night import is_night
 from nightskycam.utils.weather import Weather, get_weather
 
 from .ip import get_IPs
+from .wlan import get_wlan_info
 
 # must be the same value as in nightskycam_images.constants.TIME_FORMAT
 TIME_FORMAT: str = "%H:%M:%S"
@@ -195,6 +196,12 @@ class LocationInfoRunner(ThreadRunner):
 
         # network IP(s) of the system
         location["IPs"] = ", ".join([ip for ip in get_IPs() if "127.0.0.1" not in ip])
+
+        # wlan (ssid, signal, bitrate)
+        wlan_info: Optional[WlanInfo] = get_wlan_info()
+        if wlan is None:
+            wlan = "not connected"
+        location["wlan"] = str(wlan)
 
         # local time
         location["local_time"] = datetime.now().strftime(TIME_FORMAT)

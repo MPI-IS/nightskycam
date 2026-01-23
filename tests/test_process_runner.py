@@ -15,19 +15,14 @@ import numpy as np
 import pytest
 from nightskyrunner.config import Config
 
-from nightskycam.process.runner import ImageProcessRunner, _process, _save_files
+from nightskycam.process.runner import (ImageProcessRunner, _process,
+                                        _save_files)
 from nightskycam.process.stretch import stretch_methods
 from nightskycam.utils.file_saving import save_npy, supported_file_formats
 from nightskycam.utils.filename import get_filename
-from nightskycam.utils.test_utils import (
-    ConfigTester,
-    configuration_test,
-    get_manager,
-    get_runner_error,
-    had_error,
-    runner_started,
-    wait_for,
-)
+from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
+                                          get_manager, get_runner_error,
+                                          had_error, runner_started, wait_for)
 
 
 def _darkframes_file() -> Path:

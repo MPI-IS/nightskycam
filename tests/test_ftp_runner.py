@@ -12,14 +12,9 @@ from nightskyrunner.shared_memory import SharedMemory
 from nightskycam.ftp.runner import FtpRunner, _UploadSpeed
 from nightskycam.utils.filename import get_filename
 from nightskycam.utils.ftp import FtpConfig, FtpServer, get_ftp
-from nightskycam.utils.test_utils import (
-    ConfigTester,
-    configuration_test,
-    get_manager,
-    had_error,
-    runner_started,
-    wait_for,
-)
+from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
+                                          get_manager, had_error,
+                                          runner_started, wait_for)
 
 
 @pytest.fixture

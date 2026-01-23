@@ -7,14 +7,9 @@ from nightskyrunner.shared_memory import SharedMemory
 
 from nightskycam.location_info.runner import LocationInfoRunner
 from nightskycam.utils.location_info import LocationInfo, get_location_info
-from nightskycam.utils.test_utils import (
-    ConfigTester,
-    configuration_test,
-    get_manager,
-    had_error,
-    runner_started,
-    wait_for,
-)
+from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
+                                          get_manager, had_error,
+                                          runner_started, wait_for)
 from nightskycam.utils.weather import Weather, get_weather
 
 

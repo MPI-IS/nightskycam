@@ -8,7 +8,8 @@ from enum import Enum
 from typing import Optional, cast
 
 from nightskycam_focus import adapter
-from nightskycam_serialization.status import ApertureRunnerEntries, CamRunnerEntries
+from nightskycam_serialization.status import (ApertureRunnerEntries,
+                                              CamRunnerEntries)
 from nightskyrunner.config_getter import ConfigGetter
 from nightskyrunner.runner import ThreadRunner, status_error
 from nightskyrunner.status import Level, NoSuchStatusError, Status

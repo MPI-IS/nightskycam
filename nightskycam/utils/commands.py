@@ -15,11 +15,9 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 import tomli
 import tomli_w
-from nightskycam_serialization.command import (
-    CommandResult,
-    deserialize_command,
-    serialize_command_result,
-)
+from nightskycam_serialization.command import (CommandResult,
+                                               deserialize_command,
+                                               serialize_command_result)
 from nightskycam_serialization.status import CommandRunnerEntries
 from nightskyrunner.status import Level, Status
 

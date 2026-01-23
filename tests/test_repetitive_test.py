@@ -18,10 +18,8 @@ from nightskyrunner.config import Config
 from nightskyrunner.shared_memory import SharedMemory
 
 from nightskycam.tests.runner import TestRunner
-from nightskycam.utils.test_utils import (
-    repetitive_runner_starting_test,
-    runners_starting_test,
-)
+from nightskycam.utils.test_utils import (repetitive_runner_starting_test,
+                                          runners_starting_test)
 
 
 @pytest.fixture

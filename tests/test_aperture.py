@@ -3,7 +3,6 @@ from contextlib import contextmanager
 from datetime import datetime
 from datetime import time as datetime_time
 from pathlib import Path
-
 # from nightskycam_focus.adapter import set_aperture, set_focus, Aperture
 from typing import Generator
 
@@ -14,13 +13,9 @@ from nightskyrunner.config import Config
 from nightskyrunner.status import State, Status, wait_for_status
 
 from nightskycam.aperture.runner import ApertureRunner, adapter
-from nightskycam.utils.test_utils import (
-    ConfigTester,
-    configuration_test,
-    get_manager,
-    runner_started,
-    wait_for,
-)
+from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
+                                          get_manager, runner_started,
+                                          wait_for)
 
 # --
 # mocking set_focus and set_aperture as the corresponding hardware

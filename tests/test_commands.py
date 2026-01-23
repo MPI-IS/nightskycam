@@ -10,11 +10,9 @@ from typing import Generator
 
 import pytest
 import tomli
-from nightskycam_serialization.command import (
-    CommandResult,
-    deserialize_command_result,
-    serialize_command,
-)
+from nightskycam_serialization.command import (CommandResult,
+                                               deserialize_command_result,
+                                               serialize_command)
 from nightskycam_serialization.serialize import IncorrectToken
 
 from nightskycam.utils.commands import Command, CommandDB, get_commandDB

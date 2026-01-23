@@ -15,14 +15,9 @@ from nightskyrunner.status import State, wait_for_status
 
 from nightskycam.status.runner import StatusRunner
 from nightskycam.tests.runner import TestRunner
-from nightskycam.utils.test_utils import (
-    ConfigTester,
-    configuration_test,
-    get_manager,
-    runner_started,
-    wait_for,
-    websocket_connection_test,
-)
+from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
+                                          get_manager, runner_started,
+                                          wait_for, websocket_connection_test)
 from nightskycam.utils.websocket_manager import websocket_server
 
 

@@ -8,21 +8,12 @@ import pytest
 from nightskyrunner.config import Config
 from nightskyrunner.status import State, wait_for_status
 
-from nightskycam.sleepypi.runner import (
-    SleepyPiRunner,
-    _duration_to_event,
-    _should_sleep,
-    _sleep_duration,
-    _time_to_sleep,
-)
-from nightskycam.utils.test_utils import (
-    ConfigTester,
-    configuration_test,
-    get_manager,
-    had_error,
-    runner_started,
-    wait_for,
-)
+from nightskycam.sleepypi.runner import (SleepyPiRunner, _duration_to_event,
+                                         _should_sleep, _sleep_duration,
+                                         _time_to_sleep)
+from nightskycam.utils.test_utils import (ConfigTester, configuration_test,
+                                          get_manager, had_error,
+                                          runner_started, wait_for)
 
 
 @pytest.fixture

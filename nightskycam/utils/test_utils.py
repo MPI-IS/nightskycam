@@ -7,36 +7,19 @@ import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path, PosixPath
-from typing import (
-    Any,
-    Callable,
-    Generator,
-    Iterable,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import (Any, Callable, Generator, Iterable, Optional, Tuple, Type,
+                    TypeVar, Union, cast)
 
 import tomli_w
 from nightskyrunner.config import Config
-from nightskyrunner.config_toml import (
-    DynamicTomlConfigGetter,
-    DynamicTomlManagerConfigGetter,
-    TomlRunnerFactory,
-)
+from nightskyrunner.config_toml import (DynamicTomlConfigGetter,
+                                        DynamicTomlManagerConfigGetter,
+                                        TomlRunnerFactory)
 from nightskyrunner.factories import BasicRunnerFactory, RunnerFactory
 from nightskyrunner.manager import FixedRunners, Manager
 from nightskyrunner.runner import Runner
-from nightskyrunner.status import (
-    ErrorDict,
-    NoSuchStatusError,
-    State,
-    Status,
-    wait_for_status,
-)
+from nightskyrunner.status import (ErrorDict, NoSuchStatusError, State, Status,
+                                   wait_for_status)
 
 from nightskycam.utils.websocket_manager import websocket_server
 
