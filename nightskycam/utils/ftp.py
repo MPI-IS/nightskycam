@@ -119,7 +119,7 @@ def _simpler_connect(
     port: typing.Optional[int] = None,
     username: typing.Optional[str] = None,
     passwd: typing.Optional[str] = None,
-    timeout: typing.Optional[float] = 10,
+    timeout: typing.Optional[float] = 300,
 ) -> FTP:
     # connects to the ftp server.
     # Used internally by Ftp (see below)
@@ -159,7 +159,7 @@ def _connect(
     port: typing.Optional[int] = None,
     username: typing.Optional[str] = None,
     passwd: typing.Optional[str] = None,
-    timeout: typing.Optional[float] = 10,
+    timeout: typing.Optional[float] = 300,
 ) -> FtpConnection:
     if username is None or passwd is None:
         # Non-TLS connection
