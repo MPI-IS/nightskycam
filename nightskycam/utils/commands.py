@@ -260,13 +260,14 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         url: str,
         token: Optional[str],
         cert_file: Optional[Path],
+        header: Optional[List[str]] = None,
     ) -> List[Command]:
         r: List[Command] = []
         # getting commands from websockets
         # (i.e. commands requested by users via
         # the django webserver)
 
-        messages = self.get(url, cert_file=cert_file)
+        messages = self.get(url, cert_file=cert_file, header=header)
         for message in messages:
             # message: tuple(command id: int, command: str)
             command_id, command_str = deserialize_command(message, token=token)
@@ -284,6 +285,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         token: Optional[str],
         cert_file: Optional[Path],
         ftp_config: Optional[FtpConfig],
+        header: Optional[List[str]] = None,
     ) -> None:
         # sending to server output of executed commands
         # (for informing users of the django server)
@@ -312,7 +314,9 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
             result.stdout = stdout_file.name
 
         message = serialize_command_result(result, token=token)
-        self.send(url, message, status=status, cert_file=cert_file)
+        self.send(
+            url, message, status=status, cert_file=cert_file, header=header
+        )
 
     def iterate(
         self,
@@ -321,6 +325,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
         ftp_config: Optional[FtpConfig] = None,
         token: Optional[str] = None,
         cert_file: Optional[Path] = None,
+        header: Optional[List[str]] = None,
         status: Optional[Status] = None,
         log_fn: Optional[Callable[[Level, str], None]] = None,
     ) -> CommandRunnerEntries:
@@ -366,7 +371,9 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
                 status_dict["queued_commands"] = command_ids
 
             # reading new commands from websockets
-            new_commands: List[Command] = self._get_commands(url, token, cert_file)
+            new_commands: List[Command] = self._get_commands(
+                url, token, cert_file, header=header
+            )
             for command in new_commands:
                 if command.command_id not in commands.keys():
                     commands[command.command_id] = command
@@ -407,6 +414,7 @@ class CommandDB(WebsocketReceiverMixin, WebsocketSenderMixin):
                         token=token,
                         cert_file=cert_file,
                         ftp_config=ftp_config,
+                        header=header,
                     )
                     try:
                         del commands[_running_command.command_id]

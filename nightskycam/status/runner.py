@@ -3,7 +3,7 @@ Module defining the StatusRunner
 """
 
 from pathlib import Path
-from typing import List, Optional
+from typing import List
 
 from nightskycam_serialization.status import (StatusRunnerEntries,
                                               serialize_status)
@@ -12,7 +12,7 @@ from nightskyrunner.runner import ThreadRunner, status_error
 from nightskyrunner.status import Status, StatusDict
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
-from ..utils.websocket_manager import WebsocketSenderMixin
+from ..utils.websocket_manager import WebsocketSenderMixin, auth_params
 
 
 @status_error
@@ -73,12 +73,10 @@ class StatusRunner(ThreadRunner, WebsocketSenderMixin):
         status: List[Status] = Status.retrieve_all()
         list_status: List[StatusDict] = [s.get() for s in status]
 
-        # serialization
-        token: Optional[str] = None
-        try:
-            token = str(config["token"])
-        except KeyError:
-            pass
+        # websocket auth: a provisioned device token goes in the handshake
+        # header (and no token in the message); otherwise the legacy shared
+        # token is carried in the message.
+        token, header = auth_params(config)
         message = serialize_status(str(config["system"]), list_status, token=token)
 
         # sending it to the server, see:
@@ -89,6 +87,7 @@ class StatusRunner(ThreadRunner, WebsocketSenderMixin):
             nb_sent=0,
             status=self._status,
             cert_file=cert_file,
+            header=header,
         )
 
     def on_exit(self) -> None:

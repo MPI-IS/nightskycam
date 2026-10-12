@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "nightskycam"
-version = "0.1.28"
+version = "0.1.29"
 description = "taking pictures at night"
 authors = ["Vincent Berenz <vberenz@tuebingen.mpg.de>"]
 packages = [{ include = "nightskycam" }]
@@ -27,6 +27,7 @@ cachetools = "^6.2.2"
 websocket-client = "^1.9.0"
 matplotlib = "^3.10.7"
 websocket-server = "^0.6.4"
+cryptography = "^50.0.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "^25.12.0"

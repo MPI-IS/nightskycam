@@ -19,7 +19,7 @@ from nightskyrunner.status import Level
 from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
 from ..utils.formating import format_seconds
-from ..utils.websocket_manager import WebsocketReceiverMixin
+from ..utils.websocket_manager import WebsocketReceiverMixin, auth_params
 
 
 def _generate_random_string(length: int = 10) -> str:
@@ -168,15 +168,13 @@ class ConfigUpdateRunner(ThreadRunner, WebsocketReceiverMixin):
         except KeyError:
             pass
 
-        token: Optional[str] = None
-        try:
-            token = str(config["token"])
-        except KeyError:
-            pass
+        # device token (handshake header) if provisioned, else legacy shared
+        # token carried in the message.
+        token, header = auth_params(config)
 
         # getting messages received via websockets
         messages = WebsocketReceiverMixin.get(
-            self, str(config["url"]), cert_file=cert_file
+            self, str(config["url"]), cert_file=cert_file, header=header
         )
 
         for message in messages:

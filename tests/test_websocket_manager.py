@@ -122,6 +122,50 @@ def _check_receive_messages(
     assert set([r.strip() for r in received]) == set(messages)
 
 
+def test_auth_params():
+    """
+    Test for [nightskycam.utils.websocket_manager.auth_params](): a configured
+    device_token yields a handshake header and no message token; otherwise the
+    legacy shared token is used with no header.
+    """
+    # device token present -> header, no message token
+    token, header = ws.auth_params({"device_token": "abc", "token": "shared"})
+    assert token is None
+    assert header == ["Authorization: Bearer abc"]
+
+    # no device token -> legacy shared token, no header
+    token, header = ws.auth_params({"token": "shared"})
+    assert token == "shared"
+    assert header is None
+
+    # empty device token is treated as absent (legacy)
+    token, header = ws.auth_params({"device_token": "", "token": "shared"})
+    assert token == "shared"
+    assert header is None
+
+    # nothing configured
+    token, header = ws.auth_params({})
+    assert token is None
+    assert header is None
+
+
+def test_sender_with_auth_header():
+    """
+    Sending with an Authorization header still delivers the message (the local
+    test server ignores the header, but it must not break the send path).
+    """
+    port = 8765
+    uri = f"ws://127.0.0.1:{port}"
+    sender = ws.WebsocketSenderMixin()
+    header = ["Authorization: Bearer test-device-token"]
+    with ws.websocket_server(port) as ws_server:
+        queue_receive, _, __ = ws_server
+        sender.send(uri, "with-header", timeout=2.0, header=header)
+        message = _wait_for_websocket_message(queue_receive, timeout=2.0)
+        assert message.strip() == "with-header"
+    sender.sender_stop()
+
+
 def test_connection_websocket_receiver_mixin():
     """
     Test for [nightskycam.utils.websocket_manager.WebsocketReceiverMixin]():

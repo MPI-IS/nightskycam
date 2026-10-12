@@ -12,6 +12,7 @@ from nightskyrunner.wait_interrupts import RunnerWaitInterruptors
 
 from ..utils.commands import CommandDB
 from ..utils.ftp import FtpConfig
+from ..utils.websocket_manager import auth_params
 
 
 @status_error
@@ -94,11 +95,9 @@ class CommandRunner(ProcessRunner):
             cert_file = Path(str(config["cert_file"]))
         except KeyError:
             pass
-        token: Optional[str] = None
-        try:
-            token = str(config["token"])
-        except KeyError:
-            pass
+        # device token (handshake header) if provisioned, else legacy shared
+        # token carried in the message.
+        token, header = auth_params(config)
 
         # check path to cert_file is valid,
         # raising exception otherwise
@@ -121,6 +120,7 @@ class CommandRunner(ProcessRunner):
                 ftp_config=ftp_config,
                 token=token,
                 cert_file=cert_file,
+                header=header,
                 status=self._status,
                 log_fn=self.log,
             )
