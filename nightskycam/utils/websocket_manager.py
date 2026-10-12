@@ -20,6 +20,35 @@ def _get_ssl_opt(cert_file: Path):
     return {"cert_reqs": ssl.CERT_REQUIRED, "ca_certs": str(cert_file)}
 
 
+def _config_get(config, key: str):
+    try:
+        return config[key]
+    except KeyError:
+        return None
+
+
+def auth_params(config) -> Tuple[Optional[str], Optional[List[str]]]:
+    """
+    Resolve websocket authentication from a runner config.
+
+    Returns ``(serialize_token, header)``:
+
+    - If a non-empty ``device_token`` is configured, the system authenticates
+      via the connection handshake header and no shared token is placed in
+      message bodies -> ``(None, ["Authorization: Bearer <device_token>"])``.
+    - Otherwise it falls back to the legacy shared ``token`` carried in the
+      message, with no header -> ``(<token or None>, None)``.
+
+    This presence check is what lets a camera be upgraded before its device
+    token is provisioned: with no ``device_token`` it stays in legacy mode.
+    """
+    device_token = _config_get(config, "device_token")
+    if device_token:
+        return None, ["Authorization: Bearer " + str(device_token)]
+    token = _config_get(config, "token")
+    return (str(token) if token is not None else None), None
+
+
 class WebsocketSenderMixin:
     """
     Convenience mixin for a class to be able to send
@@ -53,6 +82,7 @@ class WebsocketSenderMixin:
         status: Optional[Status] = None,
         cert_file: Optional[Path] = None,
         timeout: Optional[float] = 10.0,
+        header: Optional[List[str]] = None,
     ) -> None:
         # creating a websocket connection, only if no
         # active connection or if the url of the server changed
@@ -81,7 +111,9 @@ class WebsocketSenderMixin:
             sslopt = {}
 
         try:
-            self._websocket = websocket.create_connection(server_url, sslopt=sslopt)
+            self._websocket = websocket.create_connection(
+                server_url, sslopt=sslopt, header=header
+            )
         except ConnectionRefusedError:
             raise Exception(f"failed to connect to {server_url}")
 
@@ -167,6 +199,7 @@ class WebsocketSenderMixin:
         status: Optional[Status] = None,
         cert_file: Optional[Path] = None,
         timeout: float = 10.0,
+        header: Optional[List[str]] = None,
     ) -> None:
         """
         Send the message to the websocket server at 'server_url'.
@@ -191,6 +224,7 @@ class WebsocketSenderMixin:
             status=status,
             cert_file=cert_file,
             timeout=timeout,
+            header=header,
         )
         if self._websocket is not None:
             if status is not None:
@@ -211,6 +245,7 @@ class WebsocketSenderMixin:
                         message,
                         nb_sent=1,
                         cert_file=cert_file,
+                        header=header,
                     )
                 else:
                     self.sender_stop(timeout)
@@ -242,6 +277,7 @@ class WebsocketReceiverMixin:
     def __init__(self) -> None:
         self._uri: Optional[str] = None
         self._cert_file: Optional[Path] = None
+        self._header: Optional[List[str]] = None
         self._messages: Queue[str] = Queue()
         self._wsapp: Optional[websocket.WebSocketApp] = None
         self._receive_thread: Optional[threading.Thread] = None
@@ -294,6 +330,11 @@ class WebsocketReceiverMixin:
             if message:
                 self._messages.put(message)
 
+        def _on_error(wsapp, error):
+            # surface e.g. "Handshake status 403 Forbidden" so get() can report
+            # an auth rejection instead of a generic disconnect.
+            self._ws_close_message = str(error)
+
         if self._cert_file:
             sslopt = _get_ssl_opt(self._cert_file)
         else:
@@ -304,9 +345,11 @@ class WebsocketReceiverMixin:
 
         self._wsapp = websocket.WebSocketApp(
             self._uri,
+            header=self._header,
             on_message=_on_message,
             on_close=_on_close,
             on_open=_on_open,
+            on_error=_on_error,
         )
 
         with self._manager_running():
@@ -340,15 +383,21 @@ class WebsocketReceiverMixin:
         self.stop_websocket()
 
     def _revive(
-        self, uri: str, cert_file: Optional[Path], timeout: Optional[float]
+        self,
+        uri: str,
+        cert_file: Optional[Path],
+        timeout: Optional[float],
+        header: Optional[List[str]] = None,
     ) -> None:
-        # restart a websocket connection if needed
+        # restart a websocket connection if needed (uri, cert or auth header
+        # changed -> reconnect, e.g. after a device token is provisioned)
 
-        if self._uri is None or self._uri != uri:
+        if self._uri is None or self._uri != uri or self._header != header:
             self.stop_websocket()
             self._timeout = timeout
             self._uri = uri
             self._cert_file = cert_file
+            self._header = header
         if not self._ws_running:
             self._timeout = timeout
             self._start()
@@ -358,6 +407,7 @@ class WebsocketReceiverMixin:
         uri: str,
         cert_file: Optional[Path] = None,
         timeout: Optional[float] = 1.0,
+        header: Optional[List[str]] = None,
     ) -> List[str]:
         """
         At the first call, spawn a websocket application that will store
@@ -379,7 +429,7 @@ class WebsocketReceiverMixin:
           RuntimeError if no websocket connection could be opened.
         """
 
-        self._revive(uri, cert_file=cert_file, timeout=timeout)
+        self._revive(uri, cert_file=cert_file, timeout=timeout, header=header)
         if not self._wait_for_connection(timeout=timeout):
             raise RuntimeError(f"websocket disconnected: {self._ws_close_message}")
         r: List[str] = []
